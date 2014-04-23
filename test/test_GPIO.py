@@ -44,6 +44,11 @@ class TestBaseGPIO(unittest.TestCase):
 		self.assertFalse(gpio.is_low(1))
 		self.assertTrue(gpio.is_high(1))
 
+	def test_output_pins(self):
+		gpio = MockGPIO()
+		gpio.output_pins({0: True, 1: False, 7: True})
+		self.assertDictEqual(gpio.pin_written, {0: [1], 1: [0], 7: [1]})
+
 
 class TestRPiGPIOAdapter(unittest.TestCase):
 	def test_setup(self):
