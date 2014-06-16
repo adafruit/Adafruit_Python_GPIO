@@ -24,6 +24,8 @@ import unittest
 
 from mock import Mock, patch
 
+import Adafruit_GPIO.Platform as Platform
+
 
 # Enable debug logging to stdout during tests.
 logging.basicConfig()
@@ -70,15 +72,23 @@ class MockSMBus(object):
 
 
 def create_device(address, busnum):
-		# Mock the smbus module and inject it into the global namespace so the
-		# Adafruit_GPIO.I2C module can be imported.  Also inject a mock SMBus
-		# instance to be returned by smbus.SMBus function calls.
-		smbus = Mock()
-		mockbus = MockSMBus()
-		smbus.SMBus.return_value = mockbus
-		with patch.dict('sys.modules', {'smbus': smbus}):
-			import Adafruit_GPIO.I2C as I2C
-			return (I2C.Device(address, busnum), smbus, mockbus)
+	# Mock the smbus module and inject it into the global namespace so the
+	# Adafruit_GPIO.I2C module can be imported.  Also inject a mock SMBus
+	# instance to be returned by smbus.SMBus function calls.
+	smbus = Mock()
+	mockbus = MockSMBus()
+	smbus.SMBus.return_value = mockbus
+	with patch.dict('sys.modules', {'smbus': smbus}):
+		import Adafruit_GPIO.I2C as I2C
+		return (I2C.Device(address, busnum), smbus, mockbus)
+
+def safe_import_i2c():
+	# Mock the smbus module and inject it into the global namespace so the
+	# Adafruit_GPIO.I2C module can be imported.  The imported I2C module is
+	# returned so global functions can be called on it.
+	with patch.dict('sys.modules', {'smbus': Mock() }):
+		import Adafruit_GPIO.I2C as I2C
+		return I2C
 
 
 class TestI2CDevice(unittest.TestCase):
@@ -144,3 +154,28 @@ class TestI2CDevice(unittest.TestCase):
 		self.assertEqual(value, -4863)
 
 
+class TestGetDefaultBus(unittest.TestCase):
+	@patch('Adafruit_GPIO.Platform.pi_revision', Mock(return_value=1))
+	@patch('Adafruit_GPIO.Platform.platform_detect', Mock(return_value=Platform.RASPBERRY_PI))
+	def test_raspberry_pi_rev1(self):
+		I2C = safe_import_i2c()
+		bus = I2C.get_default_bus()
+		self.assertEqual(bus, 0)
+
+	@patch('Adafruit_GPIO.Platform.pi_revision', Mock(return_value=2))
+	@patch('Adafruit_GPIO.Platform.platform_detect', Mock(return_value=Platform.RASPBERRY_PI))
+	def test_raspberry_pi_rev2(self):
+		I2C = safe_import_i2c()
+		bus = I2C.get_default_bus()
+		self.assertEqual(bus, 1)
+
+	@patch('Adafruit_GPIO.Platform.platform_detect', Mock(return_value=Platform.BEAGLEBONE_BLACK))
+	def test_beaglebone_black(self):
+		I2C = safe_import_i2c()
+		bus = I2C.get_default_bus()
+		self.assertEqual(bus, 1)
+
+	@patch('Adafruit_GPIO.Platform.platform_detect', Mock(return_value=Platform.UNKNOWN))
+	def test_unknown(self):
+		I2C = safe_import_i2c()
+		self.assertRaises(RuntimeError, I2C.get_default_bus)
