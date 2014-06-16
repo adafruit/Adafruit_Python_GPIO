@@ -109,15 +109,23 @@ class TestAdafruitBBIOAdapter(unittest.TestCase):
 class TestGetPlatformGPIO(unittest.TestCase):
 	def test_raspberrypi(self):
 		rpi = Mock()
-		with patch.dict('sys.modules', {'RPi': rpi, 'RPi.GPIO': rpi.gpio}):
-			gpio = GPIO.get_platform_gpio(plat='Linux-3.10.25+-armv6l-with-debian-7.4')
-			self.assertIsInstance(gpio, GPIO.RPiGPIOAdapter)
+		with patch('platform.platform', 
+				   new=Mock(return_value='Linux-3.10.25+-armv6l-with-debian-7.4')):
+			with patch.dict('sys.modules', 
+							{'RPi': rpi, 'RPi.GPIO': rpi.gpio}):
+				gpio = GPIO.get_platform_gpio()
+				self.assertIsInstance(gpio, GPIO.RPiGPIOAdapter)
 
 	def test_beagleboneblack(self):
 		bbio = Mock()
-		with patch.dict('sys.modules', {'Adafruit_BBIO': bbio, 'Adafruit_BBIO.GPIO': bbio.gpio}):
-			gpio = GPIO.get_platform_gpio(plat='Linux-3.8.13-bone47-armv7l-with-debian-7.4')
-			self.assertIsInstance(gpio, GPIO.AdafruitBBIOAdapter)
+		with patch('platform.platform', 
+				   new=Mock(return_value='Linux-3.8.13-bone47-armv7l-with-debian-7.4')):
+			with patch.dict('sys.modules', 
+			 				{'Adafruit_BBIO': bbio, 'Adafruit_BBIO.GPIO': bbio.gpio}):
+				gpio = GPIO.get_platform_gpio()
+				self.assertIsInstance(gpio, GPIO.AdafruitBBIOAdapter)
 
 	def test_otherplatform(self):
-		self.assertRaises(RuntimeError, GPIO.get_platform_gpio, plat='foo-bar')
+		with patch('platform.platform', 
+				   new=Mock(return_value='Darwin-13.2.0-x86_64-i386-64bit')):
+			self.assertRaises(RuntimeError, GPIO.get_platform_gpio)
