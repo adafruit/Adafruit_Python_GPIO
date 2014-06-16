@@ -27,9 +27,6 @@ import smbus
 import Adafruit_GPIO.Platform as Platform
 
 
-logger = logging.getLogger(__name__)
-
-
 def reverseByteOrder(data):
 	"""Reverses the byte order of an int (16-bit) or long (32-bit) value."""
 	# Courtesy Vishal Sapre
@@ -64,7 +61,6 @@ class Device(object):
 	"""Class for communicating with an I2C device using the smbus library.
 	Allows reading and writing 8-bit, 16-bit, and byte array values to registers
 	on the device."""
-	logger = logging.getLogger(__name__)
 	def __init__(self, address, busnum):
 		"""Create an instance of the I2C device at the specified address on the
 		specified I2C bus number."""
