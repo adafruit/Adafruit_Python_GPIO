@@ -19,7 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import platform
+import Adafruit_GPIO.Platform as Platform
 
 
 OUT 	= 0
@@ -128,33 +128,19 @@ class AdafruitBBIOAdapter(BaseGPIO):
 		return self.bbio_gpio.input(pin)
 
 
-def get_platform_gpio(plat=platform.platform(), **keywords):
+def get_platform_gpio(**keywords):
 	"""Attempt to return a GPIO instance for the platform which the code is being
 	executed on.  Currently supports only the Raspberry Pi using the RPi.GPIO
 	library and Beaglebone Black using the Adafruit_BBIO library.  Will throw an
 	exception if a GPIO instance can't be created for the current platform.  The
 	returned GPIO object is an instance of BaseGPIO.
 	"""
-	if plat is None:
-		raise RuntimeError('Could not determine platform type.')
-	
-	# TODO: Is there a better way to check if running on BBB or Pi?  Relying on
-	# the architecture name is brittle because new boards running armv6 or armv7
-	# might come along and conflict with this simple identification scheme.
-	
-	# Handle Raspberry Pi
-	# Platform output on Raspbian testing/jessie ~May 2014:
-	# Linux-3.10.25+-armv6l-with-debian-7.4
-	if plat.lower().find('armv6l-with-debian') > -1:
+	plat = Platform.platform_detect()
+	if plat == Platform.RASPBERRY_PI:
 		import RPi.GPIO
 		return RPiGPIOAdapter(RPi.GPIO, **keywords)
-
-	# Handle Beaglebone Black
-	# Platform output on Debian ~May 2014:
-	# Linux-3.8.13-bone47-armv7l-with-debian-7.4
-	if plat.lower().find('armv7l-with-debian') > -1:
+	elif plat == Platform.BEAGLEBONE_BLACK:
 		import Adafruit_BBIO.GPIO
 		return AdafruitBBIOAdapter(Adafruit_BBIO.GPIO, **keywords)
-
-	# Couldn't determine platform, raise error.
-	raise RuntimeError('Unsupported platform: {0}'.format(plat))
+	elif plat == Platform.UNKNOWN:
+		raise RuntimeError('Could not determine platform.')
