@@ -65,7 +65,6 @@ def pi_revision():
 			elif match:
 				# Assume revision 2 if revision ends with any other 4 chars.
 				return 2
-			else:
-				# Couldn't find the revision, throw an exception.
-				raise RuntimeError('Could not determine Raspberry Pi revision.')
+		# Couldn't find the revision, throw an exception.
+		raise RuntimeError('Could not determine Raspberry Pi revision.')
 
