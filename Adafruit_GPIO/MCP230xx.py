@@ -58,9 +58,9 @@ class MCP230xxBase(GPIO.BaseGPIO):
 		self._validate_pin(pin)
 		# Set bit to 1 for input or 0 for output.
 		if value == GPIO.IN:
-			self.iodir[pin/8] |= 1 << (pin%8)
+			self.iodir[int(pin/8)] |= 1 << (int(pin%8))
 		elif value == GPIO.OUT:
-			self.iodir[pin/8] &= ~(1 << (pin%8))
+			self.iodir[int(pin/8)] &= ~(1 << (int(pin%8)))
 		else:
 			raise ValueError('Unexpected value.  Must be GPIO.IN or GPIO.OUT.')
 		self.write_iodir()
@@ -72,9 +72,9 @@ class MCP230xxBase(GPIO.BaseGPIO):
 		self._validate_pin(pin)
 		# Set bit on or off.
 		if value:
-			self.gpio[pin/8] |= 1 << (pin%8)
+			self.gpio[int(pin/8)] |= 1 << (int(pin%8))
 		else:
-			self.gpio[pin/8] &= ~(1 << (pin%8))
+			self.gpio[int(pin/8)] &= ~(1 << (int(pin%8)))
 		# Write GPIO state.
 		self.write_gpio()
 
@@ -86,9 +86,9 @@ class MCP230xxBase(GPIO.BaseGPIO):
 		# Set each changed pin's bit.
 		for pin, value in pins.iteritems():
 			if value:
-				self.gpio[pin/8] |= 1 << (pin%8)
+				self.gpio[int(pin/8)] |= 1 << (int(pin%8))
 			else:
-				self.gpio[pin/8] &= ~(1 << (pin%8))
+				self.gpio[int(pin/8)] &= ~(1 << (int(pin%8)))
 		# Write GPIO state.
 		self.write_gpio()
 
@@ -100,7 +100,7 @@ class MCP230xxBase(GPIO.BaseGPIO):
 		# Get GPIO state.
 		gpio = self._i2c.readList(self.GPIO, self.gpio_bytes)
 		# Return True if pin's bit is set.
-		return (gpio[pin/8] & 1 << (pin%8)) > 0
+		return (gpio[int(pin/8)] & 1 << (int(pin%8))) > 0
 
 	def pullup(self, pin, enabled):
 		"""Turn on the pull-up resistor for the specified pin if enabled is True,
@@ -108,9 +108,9 @@ class MCP230xxBase(GPIO.BaseGPIO):
 		"""
 		self._validate_pin(pin)
 		if enabled:
-			self.gppu[pin/8] |= 1 << (pin%8)
+			self.gppu[int(pin/8)] |= 1 << (int(pin%8))
 		else:
-			self.gppu[pin/8] &= ~(1 << (pin%8))
+			self.gppu[int(pin/8)] &= ~(1 << (int(pin%8)))
 		self.write_gppu()
 
 	def write_gpio(self, gpio=None):
