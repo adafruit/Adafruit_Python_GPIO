@@ -43,7 +43,7 @@ def platform_detect():
 	if plat.lower().find('armv6l-with-debian') > -1:
 		return RASPBERRY_PI
 	# Handle pidora distribution.
-	if plat.lower().find('raspberry_pi') > -1:
+	elif plat.lower().find('raspberry_pi') > -1:
 		return RASPBERRY_PI
 	# Handle Beaglebone Black
 	# Platform output on Debian ~May 2014:
