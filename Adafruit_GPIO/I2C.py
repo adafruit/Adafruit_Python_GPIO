@@ -69,6 +69,13 @@ class Device(object):
 		self._logger = logging.getLogger('Adafruit_I2C.Device.Bus.{0}.Address.{1:#0X}' \
 								.format(busnum, address))
 
+	def writeRaw8(self, value):
+		"""Write an 8-bit value on the bus (without register)."""
+		value = value & 0xFF
+		self._bus.write_byte(self._address, value)
+		self._logger.debug("Wrote 0x%02X",
+					 value)
+
 	def write8(self, register, value):
 		"""Write an 8-bit value to the specified register."""
 		value = value & 0xFF
@@ -96,6 +103,13 @@ class Device(object):
 		self._logger.debug("Read the following from register 0x%02X: %s",
 			 		 register, results)
 		return results
+
+	def readRaw8(self):
+		"""Read an 8-bit value on the bus (without register)."""
+		result = self._bus.read_byte(self._address) & 0xFF
+		self._logger.debug("Read 0x%02X",
+					result)
+		return result
 
 	def readU8(self, register):
 		"""Read an unsigned byte from the specified register."""
