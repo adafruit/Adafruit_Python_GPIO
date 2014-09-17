@@ -208,7 +208,7 @@ class BitBang(object):
 		line, and if deassert_ss is true the SS line will be put back high.
 		Bytes which are read will be returned as a bytearray object.
 		"""
-		if self._mosi is None:
+		if self._miso is None:
 			raise RuntimeError('Read attempted with no MISO pin specified.')
 		if assert_ss and self._ss is not None:
 			self._gpio.set_low(self._ss)
