@@ -46,6 +46,11 @@ class TestPiRevision(unittest.TestCase):
 	def test_revision_1(self):
 		with patch('__builtin__.open') as mock_open:
 			handle = mock_open.return_value.__enter__.return_value
+			handle.__iter__.return_value = iter(['Revision : 0000'])
+			rev = Platform.pi_revision()
+			self.assertEquals(rev, 1)
+		with patch('__builtin__.open') as mock_open:
+			handle = mock_open.return_value.__enter__.return_value
 			handle.__iter__.return_value = iter(['Revision : 0002'])
 			rev = Platform.pi_revision()
 			self.assertEquals(rev, 1)

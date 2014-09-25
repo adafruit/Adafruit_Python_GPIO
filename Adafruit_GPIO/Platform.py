@@ -72,8 +72,8 @@ def pi_revision():
 			# Match a line of the form "Revision : 0002" while ignoring extra
 			# info in front of the revsion (like 1000 when the Pi was over-volted).
 			match = re.match('Revision\s+:\s+.*(\w{4})$', line)
-			if match and match.group(1) in ['0002', '0003']:
-				# Return revision 1 if revision ends with 0002 or 0003.
+			if match and match.group(1) in ['0000', '0002', '0003']:
+				# Return revision 1 if revision ends with 0000, 0002 or 0003.
 				return 1
 			elif match:
 				# Assume revision 2 if revision ends with any other 4 chars.
