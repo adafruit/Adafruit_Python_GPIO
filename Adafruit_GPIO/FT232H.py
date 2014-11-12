@@ -103,6 +103,9 @@ class FT232H(object):
 		self._ctx = ftdi.new()
 		if self._ctx == 0:
 			raise RuntimeError('ftdi_new failed! Is libftdi1 installed?')
+		# Register handler to close and cleanup FTDI context on program exit.
+		atexit.register(self.close)
+		# Open USB connection for specified VID and PID.
 		self._check(ftdi.usb_open, vid, pid)
 		# Reset device.
 		self._check(ftdi.usb_reset)
@@ -116,6 +119,12 @@ class FT232H(object):
 		self._write('\x80\x00\x00\x82\x00\x00')
 		self._direction = 0x0000
 		self._level = 0x0000
+
+	def close(self):
+		"""Close the FTDI device.  Will be automatically called when the program ends."""
+		if self._ctx is not None:
+			ftdi.free(self._ctx)
+		self._ctx = None
 
 	def _write(self, string):
 		"""Helper function to call write_data on the provided FTDI device and
