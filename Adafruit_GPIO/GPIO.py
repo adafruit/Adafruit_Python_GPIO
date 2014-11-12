@@ -76,6 +76,14 @@ class BaseGPIO(object):
 		for pin, value in pins.iteritems():
 			self.output(pin, value)
 
+	def setup_pins(self, pins):
+		"""Setup multiple pins as inputs or outputs at once.  Pins should be a
+		dict of pin name to pin type (IN or OUT).
+		"""
+		# General implementation that can be improved by subclasses.
+		for pin, value in pins.iteritems():
+			self.setup(pin, value)
+
 
 class RPiGPIOAdapter(BaseGPIO):
 	"""GPIO implementation for the Raspberry Pi using the RPi.GPIO library."""
