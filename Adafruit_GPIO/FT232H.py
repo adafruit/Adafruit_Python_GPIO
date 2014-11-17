@@ -20,7 +20,6 @@
 # THE SOFTWARE.
 
 import atexit
-import binascii
 import logging
 import math
 import os
@@ -40,6 +39,8 @@ FT232H_PID = 0x6014   # Default FTDI FT232H product ID
 
 MSBFIRST = 0
 LSBFIRST = 1
+
+_REPEAT_DELAY = 4
 
 
 def _check_running_as_root():
@@ -109,9 +110,13 @@ class FT232H(object):
 		self._check(ftdi.usb_open, vid, pid)
 		# Reset device.
 		self._check(ftdi.usb_reset)
+		# Disable flow control. Commented out because it is unclear if this is necessary.
+		#self._check(ftdi.setflowctrl, ftdi.SIO_DISABLE_FLOW_CTRL)
 		# Change read & write buffers to maximum size, 65535 bytes.
 		self._check(ftdi.read_data_set_chunksize, 65535)
 		self._check(ftdi.write_data_set_chunksize, 65535)
+		# Clear pending read data & write buffers.
+		self._check(ftdi.usb_purge_buffers)
 		# Enable MPSSE and syncronize communication with device.
 		self._mpsse_enable()
 		self._mpsse_sync()
@@ -130,6 +135,12 @@ class FT232H(object):
 		"""Helper function to call write_data on the provided FTDI device and
 		verify it succeeds.
 		"""
+		# Get modem status. Useful to enable for debugging.
+		#ret, status = ftdi.poll_modem_status(self._ctx)
+		#if ret == 0:
+		#	logger.debug('Modem status {0:02X}'.format(status))
+		#else:
+		#	logger.debug('Modem status error {0}'.format(ret))
 		length = len(string)
 		ret = ftdi.write_data(self._ctx, string, length)
 		# Log the string that was written in a python hex string format using a very
@@ -156,13 +167,21 @@ class FT232H(object):
 		the read data as a string if successful, otherwise raises an execption.
 		"""
 		start = time.time()
+		# Start with an empty response buffer.
+		response = bytearray(expected)
+		index = 0
+		# Loop calling read until the response buffer is full or a timeout occurs.
 		while time.time() - start <= timeout_s:
-			ret, data = ftdi.read_data(self._ctx, expected)
+			ret, data = ftdi.read_data(self._ctx, expected - index)
+			# Fail if there was an error reading data.
 			if ret < 0:
 				raise RuntimeError('ftdi_read_data failed with error code {0}.'.format(ret))
-			if ret == expected:
-				#logger.debug('Read {0}'.format(''.join(['\\x{0:02X}'.format(ord(x)) for x in data])))
-				return data
+			# Add returned data to the buffer.
+			response[index:index+ret] = data[:ret]
+			index += ret
+			# Buffer is full, return the result data.
+			if index >= expected:
+				return str(response)
 			time.sleep(0.01)
 		raise RuntimeError('Timeout while polling ftdi_read_data for {0} bytes!'.format(expected))
 
@@ -449,84 +468,90 @@ class I2CDevice(object):
 		# This matches the protocol for I2C communication so multiple devices can
 		# share the I2C bus.
 		self._ft232h._write('\x9E\x07\x00')
-		self._i2c_idle()
+		self._idle()
 
-	def _i2c_idle(self):
+	def _idle(self):
 		"""Put I2C lines into idle state."""
-		# Set SCL and data out to output high, data in to input.
+		# Put the I2C lines into an idle state with SCL and SDA high.
 		self._ft232h.setup_pins({0: GPIO.OUT, 1: GPIO.OUT, 2: GPIO.IN}, 
 								{0: GPIO.HIGH, 1: GPIO.HIGH})
 
+	def _transaction_start(self):
+		"""Start I2C transaction."""
+		# Clear command buffer and expected response bytes.
+		self._command = []
+		self._expected = 0
+
+	def _transaction_end(self):
+		"""End I2C transaction and get response bytes, including ACKs."""
+		# Ask to return response bytes immediately.
+		self._command.append('\x87')
+		# Send the entire command to the MPSSE.
+		self._ft232h._write(''.join(self._command))
+		# Read response bytes and return them.
+		return bytearray(self._ft232h._poll_read(self._expected))
+
 	def _i2c_start(self):
-		"""Send I2C start condition."""
-		# Set SCL high and SDA low.  Repeat command 4 times to allow some time
-		# for the signal to be read.
+		"""Send I2C start signal. Must be called within a transaction start/end.
+		"""
+		# Set SCL high and SDA low, repeat 4 times to stay in this state for a 
+		# short period of time.
 		self._ft232h.output_pins({0: GPIO.HIGH, 1: GPIO.LOW}, write=False)
-		self._ft232h._write(self._ft232h.mpsse_gpio() * 4)
-		# Set SCL low and SDA low for a short period.
+		self._command.append(self._ft232h.mpsse_gpio() * _REPEAT_DELAY)
+		# Now drop SCL to low (again repeat 4 times for short delay).
 		self._ft232h.output_pins({0: GPIO.LOW, 1: GPIO.LOW}, write=False)
-		self._ft232h._write(self._ft232h.mpsse_gpio() * 4)
+		self._command.append(self._ft232h.mpsse_gpio() * _REPEAT_DELAY)
+
+	def _i2c_idle(self):
+		"""Set I2C signals to idle state with SCL and SDA at a high value. Must
+		be called within a transaction start/end.
+		"""
+		self._ft232h.output_pins({0: GPIO.HIGH, 1: GPIO.HIGH}, write=False)
+		self._command.append(self._ft232h.mpsse_gpio() * _REPEAT_DELAY)
 
 	def _i2c_stop(self):
-		"""Send I2C stop condition."""
+		"""Send I2C stop signal. Must be called within a transaction start/end.
+		"""
 		# Set SCL low and SDA low for a short period.
 		self._ft232h.output_pins({0: GPIO.LOW, 1: GPIO.LOW}, write=False)
-		self._ft232h._write(self._ft232h.mpsse_gpio() * 4)
+		self._command.append(self._ft232h.mpsse_gpio() * _REPEAT_DELAY)
 		# Set SCL high and SDA low for a short period.
 		self._ft232h.output_pins({0: GPIO.HIGH, 1: GPIO.LOW}, write=False)
-		self._ft232h._write(self._ft232h.mpsse_gpio() * 4)
+		self._command.append(self._ft232h.mpsse_gpio() * _REPEAT_DELAY)
 		# Finally set SCL high and SDA high for a short period.
 		self._ft232h.output_pins({0: GPIO.HIGH, 1: GPIO.HIGH}, write=False)
-		self._ft232h._write(self._ft232h.mpsse_gpio() * 4)
+		self._command.append(self._ft232h.mpsse_gpio() * _REPEAT_DELAY)
 
 	def _i2c_read_bytes(self, length=1):
 		"""Read the specified number of bytes from the I2C bus.  Length is the
-		number of bytes to read (must be 1 or more), and nak is a boolean to
-		indicate if an acknowledgement NAK should be sent back after the read.
+		number of bytes to read (must be 1 or more).
 		"""
-		# Build string of commands to read bytes and respond with ACK bits.
-		command = []
 		for i in range(length-1):
 			# Read a byte and send ACK.
-			command.append('\x20\x00\x00\x13\x00\x00')
-		# Read last byte and send NAK.
-		command.append('\x20\x00\x13\x13\x00\xFF')
-		# Make sure pins are back in idle state with clock low and data high.
-		self._ft232h.output_pins({0: GPIO.LOW, 1: GPIO.HIGH}, write=False)
-		command.append(self._ft232h.mpsse_gpio())
-		# Ask that read bytes are immediately returned.
-		command.append('\x87')
-		# Send command to the chip.
-		self._ft232h._write(''.join(command)) 
-		# Read response bytes.
-		return bytearray(self._ft232h._poll_read(length))
-
-	def _i2c_write_bytes(self, data, expect_nak=False):
-		"""Write the specified number of bytes to the chip, expecting an ACK after
-		every byte.
-		"""
-		command = []
-		for byte in data:
-			# Write byte.
-			command.append(str(bytearray((0x11, 0x00, 0x00, byte))))
+			self._command.append('\x20\x00\x00\x13\x00\x00')
 			# Make sure pins are back in idle state with clock low and data high.
 			self._ft232h.output_pins({0: GPIO.LOW, 1: GPIO.HIGH}, write=False)
-			command.append(self._ft232h.mpsse_gpio())
+			self._command.append(self._ft232h.mpsse_gpio())
+		# Read last byte and send NAK.
+		self._command.append('\x20\x00\x00\x13\x00\xFF')
+		# Make sure pins are back in idle state with clock low and data high.
+		self._ft232h.output_pins({0: GPIO.LOW, 1: GPIO.HIGH}, write=False)
+		self._command.append(self._ft232h.mpsse_gpio())
+		# Increase expected number of bytes.
+		self._expected += length
+
+	def _i2c_write_bytes(self, data):
+		"""Write the specified number of bytes to the chip."""
+		for byte in data:
+			# Write byte.
+			self._command.append(str(bytearray((0x11, 0x00, 0x00, byte))))
 			# Read bit for ACK/NAK.
-			command.append('\x22\x00')
-		# Return results immediately.
-		command.append('\x87')
-		# Send command to the chip.
-		self._ft232h._write(''.join(command)) 
-		# Read response bytes.
-		response = bytearray(self._ft232h._poll_read(len(data)))
-		# Check all responses are ACK and end is NAK.
-		for byte in response[:-1]:
-			if (byte & 0x01) != 0x00:
-				raise RuntimeError('Expected I2C ACK but none was received.')
-		if expect_nak:
-			if (response[-1] & 0x01) != 0x01:
-				raise RuntimeError('Expected I2C NAK but none was received.')
+			self._command.append('\x22\x00')
+			# Make sure pins are back in idle state with clock low and data high.
+			self._ft232h.output_pins({0: GPIO.LOW, 1: GPIO.HIGH}, write=False)
+			self._command.append(self._ft232h.mpsse_gpio() * _REPEAT_DELAY)
+		# Increase expected response bytes.
+		self._expected += len(data)
 
 	def _address_byte(self, read=True):
 		"""Return the address byte with the specified R/W bit set.  If read is 
@@ -537,21 +562,35 @@ class I2CDevice(object):
 		else:
 			return self._address << 1
 
+	def _verify_acks(self, response):
+		"""Check all the specified bytes have the ACK bit set.  Throws a
+		RuntimeError exception if not all the ACKs are set.
+		"""
+		for byte in response:
+			if byte & 0x01 != 0x00:
+				raise RuntimeError('Failed to find expected I2C ACK!')
+
 	def writeRaw8(self, value):
 		"""Write an 8-bit value on the bus (without register)."""
 		value = value & 0xFF
-		self._i2c_idle()
+		self._idle()
+		self._transaction_start()
 		self._i2c_start()
 		self._i2c_write_bytes([self._address_byte(False), value])
 		self._i2c_stop()
+		response = self._transaction_end()
+		self._verify_acks(response)
 
 	def write8(self, register, value):
 		"""Write an 8-bit value to the specified register."""
 		value = value & 0xFF
-		self._i2c_idle()
+		self._idle()
+		self._transaction_start()
 		self._i2c_start()
 		self._i2c_write_bytes([self._address_byte(False), register, value])
 		self._i2c_stop()
+		response = self._transaction_end()
+		self._verify_acks(response)
 
 	def write16(self, register, value, little_endian=True):
 		"""Write a 16-bit value to the specified register."""
@@ -560,52 +599,74 @@ class I2CDevice(object):
 		value_high = (value >> 8) & 0xFF
 		if not little_endian:
 			value_low, value_high = value_high, value_low
-		self._i2c_idle()
+		self._idle()
+		self._transaction_start()
 		self._i2c_start()
 		self._i2c_write_bytes([self._address_byte(False), register, value_low, 
 								value_high])
 		self._i2c_stop()
+		response = self._transaction_end()
+		self._verify_acks(response)
 
 	def writeList(self, register, data):
 		"""Write bytes to the specified register."""
-		self._i2c_idle()
+		self._idle()
+		self._transaction_start()
 		self._i2c_start()
 		self._i2c_write_bytes([self._address_byte(False), register] + data)
 		self._i2c_stop()
+		response = self._transaction_end()
+		self._verify_acks(response)
 
 	def readList(self, register, length):
 		"""Read a length number of bytes from the specified register.  Results 
 		will be returned as a bytearray."""
 		if length <= 0:
 			raise ValueError("Length must be at least 1 byte.")
-		self._i2c_idle()
+		self._idle()
+		self._transaction_start()
 		self._i2c_start()
 		self._i2c_write_bytes([self._address_byte(True), register])
-		response = self._i2c_read_bytes(length)
 		self._i2c_stop()
-		return response
+		self._i2c_idle()
+		self._i2c_start()
+		self._i2c_read_bytes(length)
+		self._i2c_stop()
+		response = self._transaction_end()
+		self._verify_acks(response[:-length])
+		return response[-length:]
 
 	def readRaw8(self):
 		"""Read an 8-bit value on the bus (without register)."""
+		self._idle()
+		self._transaction_start()
+		self._i2c_start()
+		self._i2c_write_bytes([self._address_byte(False)])
+		self._i2c_stop()
 		self._i2c_idle()
 		self._i2c_start()
 		self._i2c_write_bytes([self._address_byte(True)])
-		response = self._i2c_read_bytes(1)
+		self._i2c_read_bytes(1)
 		self._i2c_stop()
-		if len(response) != 1:
-			raise RuntimeError('Expected 1 byte response but received {0} byte(s).'.format(len(response)))
-		return response[0]
+		response = self._transaction_end()
+		self._verify_acks(response[:-1])
+		return response[-1]
 
 	def readU8(self, register):
 		"""Read an unsigned byte from the specified register."""
+		self._idle()
+		self._transaction_start()
+		self._i2c_start()
+		self._i2c_write_bytes([self._address_byte(False), register])
+		self._i2c_stop()
 		self._i2c_idle()
 		self._i2c_start()
-		self._i2c_write_bytes([self._address_byte(True), register])
-		response = self._i2c_read_bytes(1)
+		self._i2c_write_bytes([self._address_byte(True)])
+		self._i2c_read_bytes(1)
 		self._i2c_stop()
-		if len(response) != 1:
-			raise RuntimeError('Expected 1 byte response but received {0} byte(s).'.format(len(response)))
-		return response[0]
+		response = self._transaction_end()
+		self._verify_acks(response[:-1])
+		return response[-1]
 
 	def readS8(self, register):
 		"""Read a signed byte from the specified register."""
@@ -618,17 +679,22 @@ class I2CDevice(object):
 		"""Read an unsigned 16-bit value from the specified register, with the
 		specified endianness (default little endian, or least significant byte
 		first)."""
+		self._idle()
+		self._transaction_start()
+		self._i2c_start()
+		self._i2c_write_bytes([self._address_byte(False), register])
+		self._i2c_stop()
 		self._i2c_idle()
 		self._i2c_start()
-		self._i2c_write_bytes([self._address_byte(True), register])
-		response = self._i2c_read_bytes(2)
+		self._i2c_write_bytes([self._address_byte(True)])
+		self._i2c_read_bytes(2)
 		self._i2c_stop()
-		if len(response) != 2:
-			raise RuntimeError('Expected 2 byte response but received {0} byte(s).'.format(len(response)))
+		response = self._transaction_end()
+		self._verify_acks(response[:-2])
 		if little_endian:
-			return (response[1] << 8) | response[0]
+			return (response[-1] << 8) | response[-2]
 		else:
-			return (response[0] << 8) | response[1]
+			return (response[-2] << 8) | response[-1]
 
 	def readS16(self, register, little_endian=True):
 		"""Read a signed 16-bit value from the specified register, with the
