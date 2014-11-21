@@ -22,8 +22,6 @@
 import operator
 import time
 
-import spidev
-
 import Adafruit_GPIO as GPIO
 
 
@@ -39,6 +37,7 @@ class SpiDev(object):
 		identify the device, for example the device /dev/spidev1.0 would be port
 		1 and device 0.
 		"""
+		import spidev
 		self._device = spidev.SpiDev()
 		self._device.open(port, device)
 		self._device.max_speed_hz=max_speed_hz

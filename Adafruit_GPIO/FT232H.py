@@ -94,7 +94,13 @@ def use_FT232H():
 	atexit.register(enable_FTDI_driver)
 
 
-class FT232H(object):
+class FT232H(GPIO.BaseGPIO):
+	# Make GPIO constants that match main GPIO class for compatibility.
+	HIGH = GPIO.HIGH
+	LOW  = GPIO.LOW
+	IN   = GPIO.IN
+	OUT  = GPIO.OUT
+
 	def __init__(self, vid=FT232H_VID, pid=FT232H_PID):
 		"""Create a FT232H object.  Will search for the first available FT232H
 		device with the specified USB vendor ID and product ID (defaults to
@@ -268,6 +274,13 @@ class FT232H(object):
 		"""Write the current MPSSE GPIO state to the FT232H chip."""
 		self._write(self.mpsse_gpio())
 
+	def get_i2c_device(self, address, **kwargs):
+		"""Return an I2CDevice instance using this FT232H object and the provided
+		I2C address.  Meant to be passed as the i2c_provider parameter to objects
+		which use the Adafruit_Python_GPIO library for I2C.
+		"""
+		return I2CDevice(self, address, **kwargs)
+
 	# GPIO functions below:
 
 	def _setup_pin(self, pin, mode):
@@ -336,11 +349,25 @@ class FT232H(object):
 
 
 class SPI(object):
-	def __init__(self, ft232h, clock_hz, mode=0, bitorder=MSBFIRST):
+	def __init__(self, ft232h, cs=None, max_speed_hz=1000000, mode=0, bitorder=MSBFIRST):
 		self._ft232h = ft232h
-		self.set_clock_hz(clock_hz)
+		# Initialize chip select pin if provided to output high.
+		if cs is not None:
+			ft232h.setup(cs, GPIO.OUT)
+			ft232h.set_high(cs)
+		self._cs = cs
+		# Initialize clock, mode, and bit order.
+		self.set_clock_hz(max_speed_hz)
 		self.set_mode(mode)
 		self.set_bit_order(bitorder)
+
+	def _assert_cs(self):
+		if self._cs is not None:
+			self._ft232h.set_low(self._cs)
+
+	def _deassert_cs(self):
+		if self._cs is not None:
+			self._ft232h.set_high(self._cs)
 
 	def set_clock_hz(self, hz):
 		"""Set the speed of the SPI clock in hertz.  Note that not all speeds
@@ -407,10 +434,12 @@ class SPI(object):
 		length = len(data)-1
 		len_low  = length & 0xFF
 		len_high = (length >> 8) & 0xFF
+		self._assert_cs()
 		# Send command and length.
 		self._ft232h._write(str(bytearray((command, len_low, len_high))))
 		# Send data.
 		self._ft232h._write(str(bytearray(data)))
+		self._deassert_cs()
 
 	def read(self, length):
 		"""Half-duplex SPI read.  The specified length of bytes will be clocked
@@ -424,8 +453,10 @@ class SPI(object):
 		# considers 0 a length of 1 and FFFF a length of 65536
 		len_low  = (length-1) & 0xFF
 		len_high = ((length-1) >> 8) & 0xFF
+		self._assert_cs()
 		# Send command and length.
-		self._ft232h._write(str(bytearray(command, len_low, len_high, 0x87)))
+		self._ft232h._write(str(bytearray((command, len_low, len_high, 0x87))))
+		self._deassert_cs()
 		# Read response bytes.
 		return bytearray(self._ft232h._poll_read(length))
 
@@ -444,9 +475,11 @@ class SPI(object):
 		len_low  = (length-1) & 0xFF
 		len_high = ((length-1) >> 8) & 0xFF
 		# Send command and length.
+		self._assert_cs()
 		self._ft232h._write(str(bytearray((command, len_low, len_high))))
 		self._ft232h._write(str(bytearray(data)))
 		self._ft232h._write('\x87')
+		self._deassert_cs()
 		# Read response bytes.
 		return bytearray(self._ft232h._poll_read(length))
 

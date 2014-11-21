@@ -56,6 +56,13 @@ def get_default_bus():
 	else:
 		raise RuntimeError('Could not determine default I2C bus for platform.')
 
+def get_i2c_device(address, busnum=get_default_bus(), **kwargs):
+	"""Return an I2C device for the specified address and on the specified bus.
+	If busnum isn't specified, the default I2C bus for the platform will attempt
+	to be detected.
+	"""
+	return Device(address, busnum, **kwargs)
+
 
 class Device(object):
 	"""Class for communicating with an I2C device using the smbus library.

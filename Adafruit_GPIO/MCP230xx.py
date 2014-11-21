@@ -30,11 +30,15 @@ class MCP230xxBase(GPIO.BaseGPIO):
 	class for interacting with device.
 	"""
 
-	def __init__(self, address, busnum=I2C.get_default_bus()):
+	def __init__(self, address, i2c=None):
 		"""Initialize MCP230xx at specified I2C address and bus number.  If bus
 		is not specified it will default to the appropriate platform detected bus.
 		"""
-		self._i2c = I2C.Device(address, busnum)
+		# Create I2C device.
+		if i2c is None:
+			import Adafruit_GPIO.I2C as I2C
+			i2c = I2C
+		self._device = i2c.get_i2c_device(address, **kwargs)
 		# Assume starting in ICON.BANK = 0 mode (sequential access).
 		# Compute how many bytes are needed to store count of GPIO.
 		self.gpio_bytes = int(math.ceil(self.NUM_GPIO/8.0))
@@ -98,7 +102,7 @@ class MCP230xxBase(GPIO.BaseGPIO):
 		"""
 		self._validate_pin(pin)
 		# Get GPIO state.
-		gpio = self._i2c.readList(self.GPIO, self.gpio_bytes)
+		gpio = self._device.readList(self.GPIO, self.gpio_bytes)
 		# Return True if pin's bit is set.
 		return (gpio[int(pin/8)] & 1 << (int(pin%8))) > 0
 
@@ -119,7 +123,7 @@ class MCP230xxBase(GPIO.BaseGPIO):
 		"""
 		if gpio is not None:
 			self.gpio = gpio
-		self._i2c.writeList(self.GPIO, self.gpio)
+		self._device.writeList(self.GPIO, self.gpio)
 
 	def write_iodir(self, iodir=None):
 		"""Write the specified byte value to the IODIR registor.  If no value
@@ -127,7 +131,7 @@ class MCP230xxBase(GPIO.BaseGPIO):
 		"""
 		if iodir is not None:
 			self.iodir = iodir 
-		self._i2c.writeList(self.IODIR, self.iodir)
+		self._device.writeList(self.IODIR, self.iodir)
 
 	def write_gppu(self, gppu=None):
 		"""Write the specified byte value to the GPPU registor.  If no value
@@ -135,7 +139,7 @@ class MCP230xxBase(GPIO.BaseGPIO):
 		"""
 		if gppu is not None:
 			self.gppu = gppu
-		self._i2c.writeList(self.GPPU, self.gppu)
+		self._device.writeList(self.GPPU, self.gppu)
 
 
 class MCP23017(MCP230xxBase):
