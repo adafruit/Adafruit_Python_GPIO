@@ -578,11 +578,11 @@ class I2CDevice(object):
 		for byte in data:
 			# Write byte.
 			self._command.append(str(bytearray((0x11, 0x00, 0x00, byte))))
-			# Read bit for ACK/NAK.
-			self._command.append('\x22\x00')
 			# Make sure pins are back in idle state with clock low and data high.
 			self._ft232h.output_pins({0: GPIO.LOW, 1: GPIO.HIGH}, write=False)
 			self._command.append(self._ft232h.mpsse_gpio() * _REPEAT_DELAY)
+			# Read bit for ACK/NAK.
+			self._command.append('\x22\x00')
 		# Increase expected response bytes.
 		self._expected += len(data)
 
@@ -602,6 +602,21 @@ class I2CDevice(object):
 		for byte in response:
 			if byte & 0x01 != 0x00:
 				raise RuntimeError('Failed to find expected I2C ACK!')
+
+	def ping(self):
+		"""Attempt to detect if a device at this address is present on the I2C
+		bus.  Will send out the device's address for writing and verify an ACK
+		is received.  Returns true if the ACK is received, and false if not.
+		"""
+		self._idle()
+		self._transaction_start()
+		self._i2c_start()
+		self._i2c_write_bytes([self._address_byte(False)])
+		self._i2c_stop()
+		response = self._transaction_end()
+		if len(response) != 1:
+			raise RuntimeError('Expected 1 response byte but received {0} byte(s).'.format(len(response)))
+		return ((response[0] & 0x01) == 0x00)
 
 	def writeRaw8(self, value):
 		"""Write an 8-bit value on the bus (without register)."""
