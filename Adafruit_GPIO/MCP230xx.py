@@ -30,7 +30,7 @@ class MCP230xxBase(GPIO.BaseGPIO):
 	class for interacting with device.
 	"""
 
-	def __init__(self, address, i2c=None):
+	def __init__(self, address, i2c=None, **kwargs):
 		"""Initialize MCP230xx at specified I2C address and bus number.  If bus
 		is not specified it will default to the appropriate platform detected bus.
 		"""
