@@ -31,12 +31,16 @@ RISING 		= 1
 FALLING 	= 2
 BOTH 		= 3
 
+PUD_OFF  = 0
+PUD_DOWN = 1
+PUD_UP   = 2
+
 class BaseGPIO(object):
 	"""Base class for implementing simple digital IO for a platform.
 	Implementors are expected to subclass from this and provide an implementation
 	of the setup, output, and input functions."""
 
-	def setup(self, pin, mode):
+	def setup(self, pin, mode, pull_up_down=PUD_OFF):
 		"""Set the input or output mode for a specified pin.  Mode should be
 		either OUT or IN."""
 		raise NotImplementedError
@@ -122,12 +126,12 @@ class RPiGPIOAdapter(BaseGPIO):
 			# Default to BCM numbering if not told otherwise.
 			rpi_gpio.setmode(rpi_gpio.BCM)
 
-	def setup(self, pin, mode):
+	def setup(self, pin, mode, pull_up_down=PUD_OFF):):
 		"""Set the input or output mode for a specified pin.  Mode should be
 		either OUTPUT or INPUT.
 		"""
 		self.rpi_gpio.setup(pin, self.rpi_gpio.IN if mode == IN else \
-								 self.rpi_gpio.OUT)
+								 self.rpi_gpio.OUT, pull_up_down=pull_up_down)
 
 	def output(self, pin, value):
 		"""Set the specified pin the provided high/low value.  Value should be
@@ -174,12 +178,12 @@ class AdafruitBBIOAdapter(BaseGPIO):
 	def __init__(self, bbio_gpio):
 		self.bbio_gpio = bbio_gpio
 
-	def setup(self, pin, mode):
+	def setup(self, pin, mode, pull_up_down=PUD_OFF):
 		"""Set the input or output mode for a specified pin.  Mode should be
 		either OUTPUT or INPUT.
 		"""
 		self.bbio_gpio.setup(pin, self.bbio_gpio.IN if mode == IN else \
-								  self.bbio_gpio.OUT)
+								  self.bbio_gpio.OUT, pull_up_down=pull_up_down)
 
 	def output(self, pin, value):
 		"""Set the specified pin the provided high/low value.  Value should be
