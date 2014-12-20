@@ -8,7 +8,7 @@ import sys
 requires = []
 # Assume spidev is required on non-windows & non-mac platforms (i.e. linux).
 if sys.platform != 'win32' and sys.platform != 'darwin':
-	requires.append('spidev')
+    requires.append('spidev')
 
 setup(name              = 'Adafruit_GPIO',
       version           = '0.6.6',

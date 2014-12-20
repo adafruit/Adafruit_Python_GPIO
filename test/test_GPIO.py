@@ -30,100 +30,100 @@ from MockGPIO import MockGPIO
 
 
 class TestBaseGPIO(unittest.TestCase):
-	def test_set_high_and_set_low(self):
-		gpio = MockGPIO()
-		gpio.set_high(1)
-		gpio.set_low(1)
-		self.assertDictEqual(gpio.pin_written, {1: [1, 0]})
+    def test_set_high_and_set_low(self):
+        gpio = MockGPIO()
+        gpio.set_high(1)
+        gpio.set_low(1)
+        self.assertDictEqual(gpio.pin_written, {1: [1, 0]})
 
-	def test_is_high_and_is_low(self):
-		gpio = MockGPIO()
-		gpio.pin_read[1] = [0, 0, 1, 1]
-		self.assertTrue(gpio.is_low(1))
-		self.assertFalse(gpio.is_high(1))
-		self.assertFalse(gpio.is_low(1))
-		self.assertTrue(gpio.is_high(1))
+    def test_is_high_and_is_low(self):
+        gpio = MockGPIO()
+        gpio.pin_read[1] = [0, 0, 1, 1]
+        self.assertTrue(gpio.is_low(1))
+        self.assertFalse(gpio.is_high(1))
+        self.assertFalse(gpio.is_low(1))
+        self.assertTrue(gpio.is_high(1))
 
-	def test_output_pins(self):
-		gpio = MockGPIO()
-		gpio.output_pins({0: True, 1: False, 7: True})
-		self.assertDictEqual(gpio.pin_written, {0: [1], 1: [0], 7: [1]})
+    def test_output_pins(self):
+        gpio = MockGPIO()
+        gpio.output_pins({0: True, 1: False, 7: True})
+        self.assertDictEqual(gpio.pin_written, {0: [1], 1: [0], 7: [1]})
 
 
 class TestRPiGPIOAdapter(unittest.TestCase):
-	def test_setup(self):
-		rpi_gpio = Mock()
-		adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
-		adapter.setup(1, GPIO.OUT)
-		rpi_gpio.setup.assert_called_with(1, rpi_gpio.OUT)
-		adapter.setup(1, GPIO.IN)
-		rpi_gpio.setup.assert_called_with(1, rpi_gpio.IN)
+    def test_setup(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
+        adapter.setup(1, GPIO.OUT)
+        rpi_gpio.setup.assert_called_with(1, rpi_gpio.OUT)
+        adapter.setup(1, GPIO.IN)
+        rpi_gpio.setup.assert_called_with(1, rpi_gpio.IN)
 
-	def test_output(self):
-		rpi_gpio = Mock()
-		adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
-		adapter.output(1, True)
-		rpi_gpio.output.assert_called_with(1, True)
-		adapter.output(1, False)
-		rpi_gpio.output.assert_called_with(1, False)
+    def test_output(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
+        adapter.output(1, True)
+        rpi_gpio.output.assert_called_with(1, True)
+        adapter.output(1, False)
+        rpi_gpio.output.assert_called_with(1, False)
 
-	def test_input(self):
-		rpi_gpio = Mock()
-		adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
-		rpi_gpio.input = Mock(return_value=True)
-		val = adapter.input(1)
-		self.assertTrue(val)
-		rpi_gpio.input.assert_called_with(1)
+    def test_input(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
+        rpi_gpio.input = Mock(return_value=True)
+        val = adapter.input(1)
+        self.assertTrue(val)
+        rpi_gpio.input.assert_called_with(1)
 
-	def test_setmode(self):
-		rpi_gpio = Mock()
-		adapter = GPIO.RPiGPIOAdapter(rpi_gpio, mode=rpi_gpio.BCM)
-		rpi_gpio.setmode.assert_called_with(rpi_gpio.BCM)
-		adapter = GPIO.RPiGPIOAdapter(rpi_gpio, mode=rpi_gpio.BOARD)
-		rpi_gpio.setmode.assert_called_with(rpi_gpio.BOARD)
-		adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
-		rpi_gpio.setmode.assert_called_with(rpi_gpio.BCM)
+    def test_setmode(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.RPiGPIOAdapter(rpi_gpio, mode=rpi_gpio.BCM)
+        rpi_gpio.setmode.assert_called_with(rpi_gpio.BCM)
+        adapter = GPIO.RPiGPIOAdapter(rpi_gpio, mode=rpi_gpio.BOARD)
+        rpi_gpio.setmode.assert_called_with(rpi_gpio.BOARD)
+        adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
+        rpi_gpio.setmode.assert_called_with(rpi_gpio.BCM)
 
 
 class TestAdafruitBBIOAdapter(unittest.TestCase):
-	def test_setup(self):
-		bbio_gpio = Mock()
-		adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
-		adapter.setup(1, GPIO.OUT)
-		bbio_gpio.setup.assert_called_with(1, bbio_gpio.OUT)
-		adapter.setup(1, GPIO.IN)
-		bbio_gpio.setup.assert_called_with(1, bbio_gpio.IN)
+    def test_setup(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        adapter.setup(1, GPIO.OUT)
+        bbio_gpio.setup.assert_called_with(1, bbio_gpio.OUT)
+        adapter.setup(1, GPIO.IN)
+        bbio_gpio.setup.assert_called_with(1, bbio_gpio.IN)
 
-	def test_output(self):
-		bbio_gpio = Mock()
-		adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
-		adapter.output(1, True)
-		bbio_gpio.output.assert_called_with(1, True)
-		adapter.output(1, False)
-		bbio_gpio.output.assert_called_with(1, False)
+    def test_output(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        adapter.output(1, True)
+        bbio_gpio.output.assert_called_with(1, True)
+        adapter.output(1, False)
+        bbio_gpio.output.assert_called_with(1, False)
 
-	def test_input(self):
-		bbio_gpio = Mock()
-		adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
-		bbio_gpio.input = Mock(return_value=True)
-		val = adapter.input(1)
-		self.assertTrue(val)
-		bbio_gpio.input.assert_called_with(1)
+    def test_input(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        bbio_gpio.input = Mock(return_value=True)
+        val = adapter.input(1)
+        self.assertTrue(val)
+        bbio_gpio.input.assert_called_with(1)
 
 
 class TestGetPlatformGPIO(unittest.TestCase):
-	@patch.dict('sys.modules', {'RPi': Mock(), 'RPi.GPIO': Mock()})
-	@patch('platform.platform', Mock(return_value='Linux-3.10.25+-armv6l-with-debian-7.4'))
-	def test_raspberrypi(self):
-		gpio = GPIO.get_platform_gpio()
-		self.assertIsInstance(gpio, GPIO.RPiGPIOAdapter)
+    @patch.dict('sys.modules', {'RPi': Mock(), 'RPi.GPIO': Mock()})
+    @patch('platform.platform', Mock(return_value='Linux-3.10.25+-armv6l-with-debian-7.4'))
+    def test_raspberrypi(self):
+        gpio = GPIO.get_platform_gpio()
+        self.assertIsInstance(gpio, GPIO.RPiGPIOAdapter)
 
-	@patch.dict('sys.modules', {'Adafruit_BBIO': Mock(), 'Adafruit_BBIO.GPIO': Mock()})
-	@patch('platform.platform', Mock(return_value='Linux-3.8.13-bone47-armv7l-with-debian-7.4'))
-	def test_beagleboneblack(self):
-		gpio = GPIO.get_platform_gpio()
-		self.assertIsInstance(gpio, GPIO.AdafruitBBIOAdapter)
+    @patch.dict('sys.modules', {'Adafruit_BBIO': Mock(), 'Adafruit_BBIO.GPIO': Mock()})
+    @patch('platform.platform', Mock(return_value='Linux-3.8.13-bone47-armv7l-with-debian-7.4'))
+    def test_beagleboneblack(self):
+        gpio = GPIO.get_platform_gpio()
+        self.assertIsInstance(gpio, GPIO.AdafruitBBIOAdapter)
 
-	@patch('platform.platform', Mock(return_value='Darwin-13.2.0-x86_64-i386-64bit'))
-	def test_otherplatform(self):
-		self.assertRaises(RuntimeError, GPIO.get_platform_gpio)
+    @patch('platform.platform', Mock(return_value='Darwin-13.2.0-x86_64-i386-64bit'))
+    def test_otherplatform(self):
+        self.assertRaises(RuntimeError, GPIO.get_platform_gpio)
