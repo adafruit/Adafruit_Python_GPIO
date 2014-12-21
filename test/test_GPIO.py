@@ -55,9 +55,13 @@ class TestRPiGPIOAdapter(unittest.TestCase):
         rpi_gpio = Mock()
         adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
         adapter.setup(1, GPIO.OUT)
-        rpi_gpio.setup.assert_called_with(1, rpi_gpio.OUT)
+        rpi_gpio.setup.assert_called_with(1, rpi_gpio.OUT, pull_up_down=rpi_gpio.PUD_OFF)
         adapter.setup(1, GPIO.IN)
-        rpi_gpio.setup.assert_called_with(1, rpi_gpio.IN)
+        rpi_gpio.setup.assert_called_with(1, rpi_gpio.IN, pull_up_down=rpi_gpio.PUD_OFF)
+        adapter.setup(1, GPIO.IN, GPIO.PUD_DOWN)
+        rpi_gpio.setup.assert_called_with(1, rpi_gpio.IN, pull_up_down=rpi_gpio.PUD_DOWN)
+        adapter.setup(1, GPIO.IN, GPIO.PUD_UP)
+        rpi_gpio.setup.assert_called_with(1, rpi_gpio.IN, pull_up_down=rpi_gpio.PUD_UP)
 
     def test_output(self):
         rpi_gpio = Mock()
@@ -90,9 +94,13 @@ class TestAdafruitBBIOAdapter(unittest.TestCase):
         bbio_gpio = Mock()
         adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
         adapter.setup(1, GPIO.OUT)
-        bbio_gpio.setup.assert_called_with(1, bbio_gpio.OUT)
+        bbio_gpio.setup.assert_called_with(1, bbio_gpio.OUT, pull_up_down=bbio_gpio.PUD_OFF)
         adapter.setup(1, GPIO.IN)
-        bbio_gpio.setup.assert_called_with(1, bbio_gpio.IN)
+        bbio_gpio.setup.assert_called_with(1, bbio_gpio.IN, pull_up_down=bbio_gpio.PUD_OFF)
+        adapter.setup(1, GPIO.IN, GPIO.PUD_DOWN)
+        bbio_gpio.setup.assert_called_with(1, bbio_gpio.IN, pull_up_down=bbio_gpio.PUD_DOWN)
+        adapter.setup(1, GPIO.IN, GPIO.PUD_UP)
+        bbio_gpio.setup.assert_called_with(1, bbio_gpio.IN, pull_up_down=bbio_gpio.PUD_UP)
 
     def test_output(self):
         bbio_gpio = Mock()
