@@ -142,6 +142,9 @@ class RPiGPIOAdapter(BaseGPIO):
         self._pud_mapping = { PUD_OFF:  rpi_gpio.PUD_OFF,
                               PUD_DOWN: rpi_gpio.PUD_DOWN,
                               PUD_UP:   rpi_gpio.PUD_UP }
+        self._edge_mapping = { RISING:  rpi_gpio.RISING,
+                               FALLING: rpi_gpio.FALLING,
+                               BOTH:   rpi_gpio.BOTH }
 
     def setup(self, pin, mode, pull_up_down=PUD_OFF):
         """Set the input or output mode for a specified pin.  Mode should be
@@ -173,7 +176,7 @@ class RPiGPIOAdapter(BaseGPIO):
             kwargs['callback']=callback
         if bouncetime > 0:
             kwargs['bouncetime']=bouncetime
-        self.rpi_gpio.add_event_detect(pin, edge, **kwargs)
+        self.rpi_gpio.add_event_detect(pin, self._edge_mapping[edge], **kwargs)
 
     def remove_event_detect(self, pin):
         """Remove edge detection for a particular GPIO channel.  Pin should be
@@ -213,6 +216,9 @@ class AdafruitBBIOAdapter(BaseGPIO):
         self._pud_mapping = { PUD_OFF:  bbio_gpio.PUD_OFF,
                               PUD_DOWN: bbio_gpio.PUD_DOWN,
                               PUD_UP:   bbio_gpio.PUD_UP }
+        self._edge_mapping = { RISING:  bbio_gpio.RISING,
+                               FALLING: bbio_gpio.FALLING,
+                               BOTH:    bbio_gpio.BOTH }
 
     def setup(self, pin, mode, pull_up_down=PUD_OFF):
         """Set the input or output mode for a specified pin.  Mode should be
@@ -244,7 +250,7 @@ class AdafruitBBIOAdapter(BaseGPIO):
             kwargs['callback']=callback
         if bouncetime > 0:
             kwargs['bouncetime']=bouncetime
-        self.bbio_gpio.add_event_detect(pin, edge, **kwargs)
+        self.bbio_gpio.add_event_detect(pin, self._edge_mapping[edge], **kwargs)
 
     def remove_event_detect(self, pin):
         """Remove edge detection for a particular GPIO channel.  Pin should be
