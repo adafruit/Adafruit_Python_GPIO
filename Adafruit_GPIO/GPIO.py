@@ -144,7 +144,7 @@ class RPiGPIOAdapter(BaseGPIO):
                               PUD_UP:   rpi_gpio.PUD_UP }
         self._edge_mapping = { RISING:  rpi_gpio.RISING,
                                FALLING: rpi_gpio.FALLING,
-                               BOTH:   rpi_gpio.BOTH }
+                               BOTH:    rpi_gpio.BOTH }
 
     def setup(self, pin, mode, pull_up_down=PUD_OFF):
         """Set the input or output mode for a specified pin.  Mode should be
@@ -195,13 +195,13 @@ class RPiGPIOAdapter(BaseGPIO):
         enable edge detection using add_event_detect() first.   Pin should be
         type IN.
         """
-        return self.rpi_gpio.event_detected(pin, callback)
+        return self.rpi_gpio.event_detected(pin)
 
     def wait_for_edge(self, pin, edge):
         """Wait for an edge.   Pin should be type IN.  Edge must be RISING,
         FALLING or BOTH.
         """
-        self.rpi_gpio.wait_for_edge(pin, edge)
+        self.rpi_gpio.wait_for_edge(pin, self._edge_mapping[edge])
 
 class AdafruitBBIOAdapter(BaseGPIO):
     """GPIO implementation for the Beaglebone Black using the Adafruit_BBIO
@@ -273,13 +273,14 @@ class AdafruitBBIOAdapter(BaseGPIO):
         enable edge detection using add_event_detect() first.   Pin should be 
         type IN.
         """
-        return self.bbio_gpio.event_detected(pin, callback)
+        return self.bbio_gpio.event_detected(pin)
 
     def wait_for_edge(self, pin, edge):
         """Wait for an edge.   Pin should be type IN.  Edge must be RISING, 
         FALLING or BOTH.
         """
-        self.bbio_gpio.wait_for_edge(pin, edge)
+        self.bbio_gpio.wait_for_edge(pin, self._edge_mapping[edge])
+
 
 def get_platform_gpio(**keywords):
     """Attempt to return a GPIO instance for the platform which the code is being
