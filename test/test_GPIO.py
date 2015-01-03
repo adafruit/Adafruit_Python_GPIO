@@ -88,6 +88,48 @@ class TestRPiGPIOAdapter(unittest.TestCase):
         adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
         rpi_gpio.setmode.assert_called_with(rpi_gpio.BCM)
 
+    def test_add_event_detect(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
+        adapter.add_event_detect(1, GPIO.RISING)
+        rpi_gpio.add_event_detect.assert_called_with(1, rpi_gpio.RISING)
+
+    def test_remove_event_detect(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
+        adapter.remove_event_detect(1)
+        rpi_gpio.remove_event_detect.assert_called_with(1)
+
+    def test_add_event_callback(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
+        adapter.add_event_callback(1, callback=self.test_add_event_callback)
+        rpi_gpio.add_event_callback.assert_called_with(1, self.test_add_event_callback)
+
+    def test_event_detected(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
+        adapter.event_detected(1)
+        rpi_gpio.event_detected.assert_called_with(1)
+
+    def test_wait_for_edge(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.RPiGPIOAdapter(rpi_gpio)
+        adapter.wait_for_edge(1, GPIO.FALLING)
+        rpi_gpio.wait_for_edge.assert_called_with(1, rpi_gpio.FALLING)
+
+    def test_cleanup(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(rpi_gpio)
+        adapter.cleanup()
+        rpi_gpio.cleanup.assert_called()
+
+    def test_cleanup_pin(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(rpi_gpio)
+        adapter.cleanup(1)
+        rpi_gpio.cleanup.assert_called_with(1)
+
 
 class TestAdafruitBBIOAdapter(unittest.TestCase):
     def test_setup(self):
@@ -117,6 +159,54 @@ class TestAdafruitBBIOAdapter(unittest.TestCase):
         val = adapter.input(1)
         self.assertTrue(val)
         bbio_gpio.input.assert_called_with(1)
+
+    def test_add_event_detect(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        adapter.add_event_detect(1, GPIO.RISING)
+        bbio_gpio.add_event_detect.assert_called_with(1, bbio_gpio.RISING)
+
+    def test_add_event_detect(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        adapter.add_event_detect(1, GPIO.RISING)
+        bbio_gpio.add_event_detect.assert_called_with(1, bbio_gpio.RISING)
+
+    def test_remove_event_detect(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        adapter.remove_event_detect(1)
+        bbio_gpio.remove_event_detect.assert_called_with(1)
+
+    def test_add_event_callback(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        adapter.add_event_callback(1, callback=self.test_add_event_callback)
+        bbio_gpio.add_event_callback.assert_called_with(1, self.test_add_event_callback)
+
+    def test_event_detected(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        adapter.event_detected(1)
+        bbio_gpio.event_detected.assert_called_with(1)
+
+    def test_wait_for_edge(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        adapter.wait_for_edge(1, GPIO.FALLING)
+        bbio_gpio.wait_for_edge.assert_called_with(1, bbio_gpio.FALLING)
+
+    def test_cleanup(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        adapter.cleanup()
+        bbio_gpio.cleanup.assert_called()
+
+    def test_cleanup_pin(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        adapter.cleanup(1)
+        bbio_gpio.cleanup.assert_called_with(1)
 
 
 class TestGetPlatformGPIO(unittest.TestCase):

@@ -121,6 +121,12 @@ class BaseGPIO(object):
         FALLING or BOTH."""
         raise NotImplementedError
 
+    def cleanup(self, pin=None):
+        """Clean up GPIO event detection for specific pin, or all pins if none 
+        is specified.
+        """
+        raise NotImplementedError
+
 class RPiGPIOAdapter(BaseGPIO):
     """GPIO implementation for the Raspberry Pi using the RPi.GPIO library."""
 
@@ -142,6 +148,9 @@ class RPiGPIOAdapter(BaseGPIO):
         self._pud_mapping = { PUD_OFF:  rpi_gpio.PUD_OFF,
                               PUD_DOWN: rpi_gpio.PUD_DOWN,
                               PUD_UP:   rpi_gpio.PUD_UP }
+        self._edge_mapping = { RISING:  rpi_gpio.RISING,
+                               FALLING: rpi_gpio.FALLING,
+                               BOTH:    rpi_gpio.BOTH }
 
     def setup(self, pin, mode, pull_up_down=PUD_OFF):
         """Set the input or output mode for a specified pin.  Mode should be
@@ -173,7 +182,7 @@ class RPiGPIOAdapter(BaseGPIO):
             kwargs['callback']=callback
         if bouncetime > 0:
             kwargs['bouncetime']=bouncetime
-        self.rpi_gpio.add_event_detect(pin, edge, **kwargs)
+        self.rpi_gpio.add_event_detect(pin, self._edge_mapping[edge], **kwargs)
 
     def remove_event_detect(self, pin):
         """Remove edge detection for a particular GPIO channel.  Pin should be
@@ -192,13 +201,22 @@ class RPiGPIOAdapter(BaseGPIO):
         enable edge detection using add_event_detect() first.   Pin should be
         type IN.
         """
-        return self.rpi_gpio.event_detected(pin, callback)
+        return self.rpi_gpio.event_detected(pin)
 
     def wait_for_edge(self, pin, edge):
         """Wait for an edge.   Pin should be type IN.  Edge must be RISING,
         FALLING or BOTH.
         """
-        self.rpi_gpio.wait_for_edge(pin, edge)
+        self.rpi_gpio.wait_for_edge(pin, self._edge_mapping[edge])
+
+    def cleanup(self, pin=None):
+        """Clean up GPIO event detection for specific pin, or all pins if none 
+        is specified.
+        """
+        if pin is None:
+            self.rpi_gpio.cleanup()
+        else:
+            self.rpi_gpio.cleanup(pin)
 
 class AdafruitBBIOAdapter(BaseGPIO):
     """GPIO implementation for the Beaglebone Black using the Adafruit_BBIO
@@ -213,6 +231,9 @@ class AdafruitBBIOAdapter(BaseGPIO):
         self._pud_mapping = { PUD_OFF:  bbio_gpio.PUD_OFF,
                               PUD_DOWN: bbio_gpio.PUD_DOWN,
                               PUD_UP:   bbio_gpio.PUD_UP }
+        self._edge_mapping = { RISING:  bbio_gpio.RISING,
+                               FALLING: bbio_gpio.FALLING,
+                               BOTH:    bbio_gpio.BOTH }
 
     def setup(self, pin, mode, pull_up_down=PUD_OFF):
         """Set the input or output mode for a specified pin.  Mode should be
@@ -244,7 +265,7 @@ class AdafruitBBIOAdapter(BaseGPIO):
             kwargs['callback']=callback
         if bouncetime > 0:
             kwargs['bouncetime']=bouncetime
-        self.bbio_gpio.add_event_detect(pin, edge, **kwargs)
+        self.bbio_gpio.add_event_detect(pin, self._edge_mapping[edge], **kwargs)
 
     def remove_event_detect(self, pin):
         """Remove edge detection for a particular GPIO channel.  Pin should be
@@ -267,13 +288,23 @@ class AdafruitBBIOAdapter(BaseGPIO):
         enable edge detection using add_event_detect() first.   Pin should be 
         type IN.
         """
-        return self.bbio_gpio.event_detected(pin, callback)
+        return self.bbio_gpio.event_detected(pin)
 
     def wait_for_edge(self, pin, edge):
         """Wait for an edge.   Pin should be type IN.  Edge must be RISING, 
         FALLING or BOTH.
         """
-        self.bbio_gpio.wait_for_edge(pin, edge)
+        self.bbio_gpio.wait_for_edge(pin, self._edge_mapping[edge])
+
+    def cleanup(self, pin=None):
+        """Clean up GPIO event detection for specific pin, or all pins if none 
+        is specified.
+        """
+        if pin is None:
+            self.bbio_gpio.cleanup()
+        else:
+            self.bbio_gpio.cleanup(pin)
+
 
 def get_platform_gpio(**keywords):
     """Attempt to return a GPIO instance for the platform which the code is being
