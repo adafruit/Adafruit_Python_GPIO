@@ -118,6 +118,18 @@ class TestRPiGPIOAdapter(unittest.TestCase):
         adapter.wait_for_edge(1, GPIO.FALLING)
         rpi_gpio.wait_for_edge.assert_called_with(1, rpi_gpio.FALLING)
 
+    def test_cleanup(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(rpi_gpio)
+        adapter.cleanup()
+        rpi_gpio.cleanup.assert_called()
+
+    def test_cleanup_pin(self):
+        rpi_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(rpi_gpio)
+        adapter.cleanup(1)
+        rpi_gpio.cleanup.assert_called_with(1)
+
 
 class TestAdafruitBBIOAdapter(unittest.TestCase):
     def test_setup(self):
@@ -183,6 +195,18 @@ class TestAdafruitBBIOAdapter(unittest.TestCase):
         adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
         adapter.wait_for_edge(1, GPIO.FALLING)
         bbio_gpio.wait_for_edge.assert_called_with(1, bbio_gpio.FALLING)
+
+    def test_cleanup(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        adapter.cleanup()
+        bbio_gpio.cleanup.assert_called()
+
+    def test_cleanup_pin(self):
+        bbio_gpio = Mock()
+        adapter = GPIO.AdafruitBBIOAdapter(bbio_gpio)
+        adapter.cleanup(1)
+        bbio_gpio.cleanup.assert_called_with(1)
 
 
 class TestGetPlatformGPIO(unittest.TestCase):
