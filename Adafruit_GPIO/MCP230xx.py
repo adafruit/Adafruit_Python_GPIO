@@ -88,7 +88,7 @@ class MCP230xxBase(GPIO.BaseGPIO):
         will be set to the given values.
         """
         # Set each changed pin's bit.
-        for pin, value in pins.iteritems():
+        for pin, value in iter(pins.items()):
             if value:
                 self.gpio[int(pin/8)] |= 1 << (int(pin%8))
             else:
