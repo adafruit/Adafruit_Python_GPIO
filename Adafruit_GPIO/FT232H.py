@@ -93,6 +93,37 @@ def use_FT232H():
     disable_FTDI_driver()
     atexit.register(enable_FTDI_driver)
 
+def enumerate_device_serials(vid=FT232H_VID, pid=FT232H_PID):
+    """Return a list of all FT232H device serial numbers connected to the
+    machine.  You can use these serial numbers to open a specific FT232H device
+    by passing it to the FT232H initializer's serial parameter.
+    """
+    try:
+        # Create a libftdi context.
+        ctx = None
+        ctx = ftdi.new()
+        # Enumerate FTDI devices.
+        device_list = None
+        count, device_list = ftdi.usb_find_all(ctx, vid, pid)
+        if count < 0:
+            raise RuntimeError('ftdi_usb_find_all returned error {0}: {1}'.format(count, ftdi.get_error_string(self._ctx)))
+        # Walk through list of devices and assemble list of serial numbers.
+        devices = []
+        while device_list is not None:
+            # Get USB device strings and add serial to list of devices.
+            ret, manufacturer, description, serial = ftdi.usb_get_strings(ctx, device_list.dev, 256, 256, 256)
+            if ret < 0:
+                raise RuntimeError('ftdi_usb_get_strings returned error {0}: {1}'.format(ret, ftdi.get_error_string(self._ctx)))
+            devices.append(serial)
+            device_list = device_list.next
+        return devices
+    finally:
+        # Make sure to clean up list and context when done.
+        if device_list is not None:
+            ftdi.list_free(device_list)
+        if ctx is not None:
+            ftdi.free(ctx)
+
 
 class FT232H(GPIO.BaseGPIO):
     # Make GPIO constants that match main GPIO class for compatibility.
@@ -101,10 +132,13 @@ class FT232H(GPIO.BaseGPIO):
     IN   = GPIO.IN
     OUT  = GPIO.OUT
 
-    def __init__(self, vid=FT232H_VID, pid=FT232H_PID):
+    def __init__(self, vid=FT232H_VID, pid=FT232H_PID, serial=None):
         """Create a FT232H object.  Will search for the first available FT232H
         device with the specified USB vendor ID and product ID (defaults to
-        FT232H default VID & PID).
+        FT232H default VID & PID).  Can also specify an optional serial number
+        string to open an explicit FT232H device given its serial number.  See
+        the FT232H.enumerate_device_serials() function to see how to list all
+        connected device serial numbers.
         """
         # Initialize FTDI device connection.
         self._ctx = ftdi.new()
@@ -112,8 +146,12 @@ class FT232H(GPIO.BaseGPIO):
             raise RuntimeError('ftdi_new failed! Is libftdi1 installed?')
         # Register handler to close and cleanup FTDI context on program exit.
         atexit.register(self.close)
-        # Open USB connection for specified VID and PID.
-        self._check(ftdi.usb_open, vid, pid)
+        if serial is None:
+            # Open USB connection for specified VID and PID if no serial is specified.
+            self._check(ftdi.usb_open, vid, pid)
+        else:
+            # Open USB connection for VID, PID, serial.
+            self._check(ftdi.usb_open_string, 's:{0}:{1}:{2}'.format(vid, pid, serial))
         # Reset device.
         self._check(ftdi.usb_reset)
         # Disable flow control. Commented out because it is unclear if this is necessary.
