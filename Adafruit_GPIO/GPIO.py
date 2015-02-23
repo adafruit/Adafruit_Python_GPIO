@@ -55,6 +55,12 @@ class BaseGPIO(object):
         or LOW/false if pulled low."""
         raise NotImplementedError
 
+    def input_pins(self, pins):
+        """Read multiple pins specified in the given list and return list of pin values
+        GPIO.HIGH/True if the pin is pulled high, or GPIO.LOW/False if pulled low.
+        """
+        raise NotImplementedError
+
     def set_high(self, pin):
         """Set the specified pin HIGH."""
         self.output(pin, HIGH)
@@ -171,6 +177,13 @@ class RPiGPIOAdapter(BaseGPIO):
         """
         return self.rpi_gpio.input(pin)
 
+    def input_pins(self, pins):
+        """Read multiple pins specified in the given list and return list of pin values
+        GPIO.HIGH/True if the pin is pulled high, or GPIO.LOW/False if pulled low.
+        """
+        # maybe rpi has a mass read...  it would be more efficient to use it if it exists
+        return [self.rpi_gpio.input(pin) for pin in pins]
+
     def add_event_detect(self, pin, edge, callback=None, bouncetime=-1):
         """Enable edge detection events for a particular GPIO channel.  Pin 
         should be type IN.  Edge must be RISING, FALLING or BOTH.  Callback is a
@@ -253,6 +266,13 @@ class AdafruitBBIOAdapter(BaseGPIO):
         or LOW/false if pulled low.
         """
         return self.bbio_gpio.input(pin)
+
+    def input_pins(self, pins):
+        """Read multiple pins specified in the given list and return list of pin values
+        GPIO.HIGH/True if the pin is pulled high, or GPIO.LOW/False if pulled low.
+        """
+        # maybe bbb has a mass read...  it would be more efficient to use it if it exists
+        return [self.bbio_gpio.input(pin) for pin in pins]
 
     def add_event_detect(self, pin, edge, callback=None, bouncetime=-1):
         """Enable edge detection events for a particular GPIO channel.  Pin 
