@@ -100,11 +100,18 @@ class MCP230xxBase(GPIO.BaseGPIO):
         """Read the specified pin and return GPIO.HIGH/True if the pin is pulled
         high, or GPIO.LOW/False if pulled low.
         """
-        self._validate_pin(pin)
+        return self.input_pins([pin])[0]
+
+    def input_pins(self, pins):
+        """Read multiple pins specified in the given list and return list of pin values
+        GPIO.HIGH/True if the pin is pulled high, or GPIO.LOW/False if pulled low.
+        """
+        for pin in pins:
+            self._validate_pin(pin)
         # Get GPIO state.
         gpio = self._device.readList(self.GPIO, self.gpio_bytes)
         # Return True if pin's bit is set.
-        return (gpio[int(pin/8)] & 1 << (int(pin%8))) > 0
+        return [(gpio[int(pin/8)] & 1 << (int(pin%8))) > 0 for pin in pins]
 
     def pullup(self, pin, enabled):
         """Turn on the pull-up resistor for the specified pin if enabled is True,
