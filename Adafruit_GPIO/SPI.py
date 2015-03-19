@@ -98,7 +98,7 @@ class SpiDev(object):
 class BitBang(object):
     """Software-based implementation of the SPI protocol over GPIO pins."""
 
-    def __init__(self, gpio, sclk, mosi, miso, ss):
+    def __init__(self, gpio, sclk, mosi=None, miso=None, ss=None):
         """Initialize bit bang (or software) based SPI.  Must provide a BaseGPIO
         class, the SPI clock, and optionally MOSI, MISO, and SS (slave select)
         pin numbers. If MOSI is set to None then writes will be disabled and fail
