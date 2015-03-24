@@ -18,4 +18,5 @@ setup(name              = 'Adafruit_GPIO',
       license           = 'MIT',
       url               = 'https://github.com/adafruit/Adafruit_Python_GPIO/',
       install_requires  = requires,
+      test_suite        = 'tests',
       packages          = find_packages())
