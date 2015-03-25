@@ -32,3 +32,8 @@ Note that you typically don't need to install this library directly as other lib
   cd Adafruit_Python_GPIO
   python setup.py install
   ```
+
+Contributing
+------------
+
+For information on contributing, such as how to run tests, etc. please see the [project wiki](https://github.com/adafruit/Adafruit_Python_GPIO/wiki/Running-Tests) on GitHub.
