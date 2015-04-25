@@ -37,7 +37,7 @@ class PCF8574(GPIO.BaseGPIO):
 
     NUM_GPIO = 8
 
-    def __init__(self, address, i2c=None, **kwargs):
+    def __init__(self, address=0x27, busnum=None, i2c=None, **kwargs):
         address = int(address)
         self.__name__ = \
             "PCF8574" if address in range(0x20, 0x28) else \
@@ -46,9 +46,9 @@ class PCF8574(GPIO.BaseGPIO):
         if self.__name__[0] != 'P':
             raise ValueError(self.__name__)
         # Create I2C device.
-        if i2c is None:
-            i2c = I2C
-        self._device = i2c.get_i2c_device(address, **kwargs)
+        i2c = i2c or I2C
+        busnum = busnum or i2c.get_default_bus()
+        self._device = i2c.get_i2c_device(address, busnum, **kwargs)
         # Buffer register values so they can be changed without reading.
         self.iodir = 0xFF  # Default direction to all inputs is in
         self.gpio = 0x00
@@ -60,15 +60,6 @@ class PCF8574(GPIO.BaseGPIO):
 
     def _read_pins(self):
         return self._device.readRaw8() & self.iodir
-
-    def _validate_pin(self, pin):
-        # Raise an exception if pin is outside the range of allowed values.
-        if pin < 0 or pin >= self.NUM_GPIO:
-            raise ValueError('Invalid GPIO value, must be between 0 and {0}.'.format(self.NUM_GPIO))
-
-    def _bit2(self, src, bit, val):
-        bit = 1 << bit
-        return (src | bit) if val else (src & ~bit)
 
 
     def setup(self, pin, mode):
@@ -98,4 +89,4 @@ class PCF8574(GPIO.BaseGPIO):
     def input_pins(self, pins):
         [self._validate_pin(pin) for pin in pins]
         inp = self._read_pins()
-        return [bool(inp & pin) for pin in pins]
+        return [bool(inp & (1<<pin)) for pin in pins]
