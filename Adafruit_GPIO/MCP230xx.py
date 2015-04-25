@@ -71,22 +71,17 @@ class MCP230xxBase(GPIO.BaseGPIO):
 
     def output(self, pin, value):
         """Set the specified pin the provided high/low value.  Value should be
-        either GPIO.HIGH/GPIO.LOW or a boolean (True = high).
+        either GPIO.HIGH/GPIO.LOW or a boolean (True = HIGH).
         """
-        self._validate_pin(pin)
-        # Set bit on or off.
-        if value:
-            self.gpio[int(pin/8)] |= 1 << (int(pin%8))
-        else:
-            self.gpio[int(pin/8)] &= ~(1 << (int(pin%8)))
-        # Write GPIO state.
-        self.write_gpio()
+        self.output_pins({pin: value})
 
     def output_pins(self, pins):
         """Set multiple pins high or low at once.  Pins should be a dict of pin
         name to pin value (HIGH/True for 1, LOW/False for 0).  All provided pins
         will be set to the given values.
         """
+        for pin in pins.keys():
+            self._validate_pin(pin)
         # Set each changed pin's bit.
         for pin, value in pins.iteritems():
             if value:
