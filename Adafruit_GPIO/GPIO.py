@@ -95,7 +95,7 @@ class BaseGPIO(object):
         """Enable edge detection events for a particular GPIO channel.  Pin 
         should be type IN.  Edge must be RISING, FALLING or BOTH.
         """
-        raise NotImplementedError
+        aise NotImplementedError
    
     def remove_event_detect(self, pin):
         """Remove edge detection for a particular GPIO channel.  Pin should be
@@ -305,6 +305,63 @@ class AdafruitBBIOAdapter(BaseGPIO):
         else:
             self.bbio_gpio.cleanup(pin)
 
+class AdafruitMinnowAdapter(BaseGPIO):
+    """GPIO implementation for the Minnowboard + MAX using the mraa library"""
+    
+    def __init__(self,mraa_gpio):
+        self.mraa_gpio = mraa_gpio
+        # Define mapping of Adafruit GPIO library constants to mraa constants
+        self._dir_mapping = { OUT:      self.mraa_gpio.DIR_OUT,
+                              IN:       self.mraa_gpio.DIR_IN }
+        self._pud_mapping = { PUD_OFF:  self.mraa_gpio.MODE_STRONG,
+                              PUD_UP:   self.mraa_gpio.MODE_HIZ,
+                              PUD_DOWN: self.mraa_gpio.MODE_PULLDOWN }
+        self._edge_mapping = { RISING:   self.mraa_gpio.EDGE_RISING,
+                              FALLING:  self.mraa_gpio.EDGE_FALLING,
+                              BOTH:     self.mraa_gpio.EDGE_BOTH }
+
+    def setup(self,pin,mode):
+        """Set the input or output mode for a specified pin.  Mode should be
+        either DIR_IN or DIR_OUT.
+        """
+        self.mraa_gpio.Gpio.dir(self.mraa_gpio.Gpio(pin),self._dir_mapping[mode])   
+
+    def output(self,pin,value):
+        """Set the specified pin the provided high/low value.  Value should be
+        either 1 (ON or HIGH), or 0 (OFF or LOW) or a boolean.
+        """
+        self.mraa_gpio.Gpio.write(self.mraa_gpio.Gpio(pin), value)
+    
+    def input(self,pin):
+        """Read the specified pin and return HIGH/true if the pin is pulled high,
+        or LOW/false if pulled low.
+        """
+        return self.mraa_gpio.Gpio.read(self.mraa_gpio.Gpio(pin))    
+    
+    def add_event_detect(self, pin, edge, callback=None, bouncetime=-1):
+        """Enable edge detection events for a particular GPIO channel.  Pin 
+        should be type IN.  Edge must be RISING, FALLING or BOTH.  Callback is a
+        function for the event.  Bouncetime is switch bounce timeout in ms for 
+        callback
+        """
+        kwargs = {}
+        if callback:
+            kwargs['callback']=callback
+        if bouncetime > 0:
+            kwargs['bouncetime']=bouncetime
+        self.mraa_gpio.Gpio.isr(self.mraa_gpio.Gpio(pin), self._edge_mapping[edge], **kwargs)
+
+    def remove_event_detect(self, pin):
+        """Remove edge detection for a particular GPIO channel.  Pin should be
+        type IN.
+        """
+        self.mraa_gpio.Gpio.isrExit(self.mraa_gpio.Gpio(pin))
+
+    def wait_for_edge(self, pin, edge):
+        """Wait for an edge.   Pin should be type IN.  Edge must be RISING, 
+        FALLING or BOTH.
+        """
+        self.bbio_gpio.wait_for_edge(self.mraa_gpio.Gpio(pin), self._edge_mapping[edge])
 
 def get_platform_gpio(**keywords):
     """Attempt to return a GPIO instance for the platform which the code is being
@@ -320,5 +377,8 @@ def get_platform_gpio(**keywords):
     elif plat == Platform.BEAGLEBONE_BLACK:
         import Adafruit_BBIO.GPIO
         return AdafruitBBIOAdapter(Adafruit_BBIO.GPIO, **keywords)
+    elif plat == Platform.MINNOWBOARD:
+        #probably don't need to import the mraa library again (did it in platform.py)
+        return AdafruitMinnowAdapter(mraa, **keywords)
     elif plat == Platform.UNKNOWN:
         raise RuntimeError('Could not determine platform.')
