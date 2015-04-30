@@ -95,7 +95,7 @@ class BaseGPIO(object):
         """Enable edge detection events for a particular GPIO channel.  Pin 
         should be type IN.  Edge must be RISING, FALLING or BOTH.
         """
-        aise NotImplementedError
+        raise NotImplementedError
    
     def remove_event_detect(self, pin):
         """Remove edge detection for a particular GPIO channel.  Pin should be
