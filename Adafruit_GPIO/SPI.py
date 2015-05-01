@@ -97,7 +97,7 @@ class SpiDev(object):
 class SpiDevMraa(object):
     """Hardware SPI implementation with the mraa library on Minnowboard"""
     def __init__(self, port, device, max_speed_hz=500000):
-        self._device = mraa.Spi()
+        self._device = mraa.Spi(0)
         self._device.mode(0)
         
     def set_clock_hz(self, hz):
@@ -106,7 +106,7 @@ class SpiDevMraa(object):
         """
         self._device.frequency(hz)
 
-        def set_mode(self,mode):
+    def set_mode(self,mode):
         """Set SPI mode which controls clock polarity and phase.  Should be a
         numeric value 0, 1, 2, or 3.  See wikipedia page for details on meaning:
         http://en.wikipedia.org/wiki/Serial_Peripheral_Interface_Bus

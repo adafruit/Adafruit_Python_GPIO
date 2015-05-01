@@ -378,7 +378,7 @@ def get_platform_gpio(**keywords):
         import Adafruit_BBIO.GPIO
         return AdafruitBBIOAdapter(Adafruit_BBIO.GPIO, **keywords)
     elif plat == Platform.MINNOWBOARD:
-        #probably don't need to import the mraa library again (did it in platform.py)
+        import mraa
         return AdafruitMinnowAdapter(mraa, **keywords)
     elif plat == Platform.UNKNOWN:
         raise RuntimeError('Could not determine platform.')
