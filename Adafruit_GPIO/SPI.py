@@ -97,6 +97,7 @@ class SpiDev(object):
 class SpiDevMraa(object):
     """Hardware SPI implementation with the mraa library on Minnowboard"""
     def __init__(self, port, device, max_speed_hz=500000):
+        import mraa
         self._device = mraa.Spi(0)
         self._device.mode(0)
         
