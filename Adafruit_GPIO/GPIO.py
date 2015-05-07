@@ -71,6 +71,13 @@ class BaseGPIO(object):
         """Return true if the specified pin is pulled low."""
         return self.input(pin) == LOW
 
+
+# Basic implementation of multiple pin methods just loops through pins and
+# processes each one individually. This is not optimal, but derived classes can
+# provide a more optimal implementation that deals with groups of pins
+# simultaneously.
+# See MCP230xx or PCF8574 classes for examples of optimized implementations.
+
     def output_pins(self, pins):
         """Set multiple pins high or low at once.  Pins should be a dict of pin
         name to pin value (HIGH/True for 1, LOW/False for 0).  All provided pins
@@ -87,9 +94,17 @@ class BaseGPIO(object):
         """Setup multiple pins as inputs or outputs at once.  Pins should be a
         dict of pin name to pin type (IN or OUT).
         """
-        # General implementation that can be improved by subclasses.
+        # General implementation that can be optimized by derived classes.
         for pin, value in iter(pins.items()):
             self.setup(pin, value)
+
+    def input_pins(self, pins):
+        """Read multiple pins specified in the given list and return list of pin values
+        GPIO.HIGH/True if the pin is pulled high, or GPIO.LOW/False if pulled low.
+        """
+        # General implementation that can be optimized by derived classes.
+        return [self.input(pin) for pin in pins]
+
 
     def add_event_detect(self, pin, edge):
         """Enable edge detection events for a particular GPIO channel.  Pin 
@@ -126,6 +141,19 @@ class BaseGPIO(object):
         is specified.
         """
         raise NotImplementedError
+
+
+# helper functions useful to derived classes
+
+    def _validate_pin(self, pin):
+        # Raise an exception if pin is outside the range of allowed values.
+        if pin < 0 or pin >= self.NUM_GPIO:
+            raise ValueError('Invalid GPIO value, must be between 0 and {0}.'.format(self.NUM_GPIO))
+
+    def _bit2(self, src, bit, val):
+        bit = 1 << bit
+        return (src | bit) if val else (src & ~bit)
+
 
 class RPiGPIOAdapter(BaseGPIO):
     """GPIO implementation for the Raspberry Pi using the RPi.GPIO library."""
@@ -170,6 +198,13 @@ class RPiGPIOAdapter(BaseGPIO):
         or LOW/false if pulled low.
         """
         return self.rpi_gpio.input(pin)
+
+    def input_pins(self, pins):
+        """Read multiple pins specified in the given list and return list of pin values
+        GPIO.HIGH/True if the pin is pulled high, or GPIO.LOW/False if pulled low.
+        """
+        # maybe rpi has a mass read...  it would be more efficient to use it if it exists
+        return [self.rpi_gpio.input(pin) for pin in pins]
 
     def add_event_detect(self, pin, edge, callback=None, bouncetime=-1):
         """Enable edge detection events for a particular GPIO channel.  Pin 
@@ -253,6 +288,13 @@ class AdafruitBBIOAdapter(BaseGPIO):
         or LOW/false if pulled low.
         """
         return self.bbio_gpio.input(pin)
+
+    def input_pins(self, pins):
+        """Read multiple pins specified in the given list and return list of pin values
+        GPIO.HIGH/True if the pin is pulled high, or GPIO.LOW/False if pulled low.
+        """
+        # maybe bbb has a mass read...  it would be more efficient to use it if it exists
+        return [self.bbio_gpio.input(pin) for pin in pins]
 
     def add_event_detect(self, pin, edge, callback=None, bouncetime=-1):
         """Enable edge detection events for a particular GPIO channel.  Pin 

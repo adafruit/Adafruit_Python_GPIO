@@ -50,10 +50,6 @@ class MCP230xxBase(GPIO.BaseGPIO):
         self.write_iodir()
         self.write_gppu()
 
-    def _validate_pin(self, pin):
-        # Raise an exception if pin is outside the range of allowed values.
-        if pin < 0 or pin >= self.NUM_GPIO:
-            raise ValueError('Invalid GPIO value, must be between 0 and {0}.'.format(self.NUM_GPIO))
 
     def setup(self, pin, value):
         """Set the input or output mode for a specified pin.  Mode should be
@@ -69,24 +65,19 @@ class MCP230xxBase(GPIO.BaseGPIO):
             raise ValueError('Unexpected value.  Must be GPIO.IN or GPIO.OUT.')
         self.write_iodir()
 
+
     def output(self, pin, value):
         """Set the specified pin the provided high/low value.  Value should be
-        either GPIO.HIGH/GPIO.LOW or a boolean (True = high).
+        either GPIO.HIGH/GPIO.LOW or a boolean (True = HIGH).
         """
-        self._validate_pin(pin)
-        # Set bit on or off.
-        if value:
-            self.gpio[int(pin/8)] |= 1 << (int(pin%8))
-        else:
-            self.gpio[int(pin/8)] &= ~(1 << (int(pin%8)))
-        # Write GPIO state.
-        self.write_gpio()
+        self.output_pins({pin: value})
 
     def output_pins(self, pins):
         """Set multiple pins high or low at once.  Pins should be a dict of pin
         name to pin value (HIGH/True for 1, LOW/False for 0).  All provided pins
         will be set to the given values.
         """
+        [self._validate_pin(pin) for pin in pins.keys()]
         # Set each changed pin's bit.
         for pin, value in iter(pins.items()):
             if value:
@@ -96,15 +87,23 @@ class MCP230xxBase(GPIO.BaseGPIO):
         # Write GPIO state.
         self.write_gpio()
 
+
     def input(self, pin):
         """Read the specified pin and return GPIO.HIGH/True if the pin is pulled
         high, or GPIO.LOW/False if pulled low.
         """
-        self._validate_pin(pin)
+        return self.input_pins([pin])[0]
+
+    def input_pins(self, pins):
+        """Read multiple pins specified in the given list and return list of pin values
+        GPIO.HIGH/True if the pin is pulled high, or GPIO.LOW/False if pulled low.
+        """
+        [self._validate_pin(pin) for pin in pins]
         # Get GPIO state.
         gpio = self._device.readList(self.GPIO, self.gpio_bytes)
         # Return True if pin's bit is set.
-        return (gpio[int(pin/8)] & 1 << (int(pin%8))) > 0
+        return [(gpio[int(pin/8)] & 1 << (int(pin%8))) > 0 for pin in pins]
+
 
     def pullup(self, pin, enabled):
         """Turn on the pull-up resistor for the specified pin if enabled is True,
