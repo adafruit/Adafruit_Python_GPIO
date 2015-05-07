@@ -11,7 +11,7 @@ if sys.platform != 'win32' and sys.platform != 'darwin':
     requires.append('spidev')
 
 setup(name              = 'Adafruit_GPIO',
-      version           = '0.9.2',
+      version           = '0.9.3',
       author            = 'Tony DiCola',
       author_email      = 'tdicola@adafruit.com',
       description       = 'Library to provide a cross-platform GPIO interface on the Raspberry Pi and Beaglebone Black using the RPi.GPIO and Adafruit_BBIO libraries.',
