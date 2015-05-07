@@ -25,7 +25,7 @@ import re
 UNKNOWN          = 0
 RASPBERRY_PI     = 1
 BEAGLEBONE_BLACK = 2
-
+MINNOWBOARD      = 3
 
 def platform_detect():
     """Detect if running on the Raspberry Pi or Beaglebone Black and return the
@@ -45,6 +45,15 @@ def platform_detect():
         return BEAGLEBONE_BLACK
     elif plat.lower().find('armv7l-with-glibc2.4') > -1:
         return BEAGLEBONE_BLACK
+        
+    # Handle Minnowboard
+    # Assumption is that mraa is installed
+    try: 
+        import mraa 
+        if mraa.getPlatformName()=='MinnowBoard MAX':
+            return MINNOWBOARD
+    except ImportError:
+        pass
     
     # Couldn't figure out the platform, just return unknown.
     return UNKNOWN
