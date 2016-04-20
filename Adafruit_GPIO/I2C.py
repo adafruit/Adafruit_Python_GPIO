@@ -22,8 +22,6 @@
 import logging
 import subprocess
 
-import smbus
-
 import Adafruit_GPIO.Platform as Platform
 
 
@@ -56,14 +54,14 @@ def get_default_bus():
     else:
         raise RuntimeError('Could not determine default I2C bus for platform.')
 
-def get_i2c_device(address, busnum=None, **kwargs):
+def get_i2c_device(address, busnum=None, i2c_interface=None, **kwargs):
     """Return an I2C device for the specified address and on the specified bus.
     If busnum isn't specified, the default I2C bus for the platform will attempt
     to be detected.
     """
     if busnum is None:
         busnum = get_default_bus()
-    return Device(address, busnum, **kwargs)
+    return Device(address, busnum, i2c_interface, **kwargs)
 
 def require_repeated_start():
     """Enable repeated start conditions for I2C register reads.  This is the
@@ -85,14 +83,21 @@ def require_repeated_start():
 
 
 class Device(object):
-    """Class for communicating with an I2C device using the smbus library.
-    Allows reading and writing 8-bit, 16-bit, and byte array values to registers
+    """Class for communicating with an I2C device using the adafruit-pureio pure
+    python smbus library, or other smbus compatible I2C interface. Allows reading
+    and writing 8-bit, 16-bit, and byte array values to registers
     on the device."""
-    def __init__(self, address, busnum):
+    def __init__(self, address, busnum, i2c_interface=None):
         """Create an instance of the I2C device at the specified address on the
         specified I2C bus number."""
         self._address = address
-        self._bus = smbus.SMBus(busnum)
+        if i2c_interface is None:
+            # Use pure python I2C interface if none is specified.
+            import Adafruit_PureIO.smbus
+            self._bus = Adafruit_PureIO.smbus.SMBus(busnum)
+        else:
+            # Otherwise use the provided class to create an smbus interface.
+            self._bus = i2c_interface(busnum)
         self._logger = logging.getLogger('Adafruit_I2C.Device.Bus.{0}.Address.{1:#0X}' \
                                 .format(busnum, address))
 
