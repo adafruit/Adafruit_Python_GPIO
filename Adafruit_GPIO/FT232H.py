@@ -396,8 +396,8 @@ class SPI(object):
         self._ft232h = ft232h
         # Initialize chip select pin if provided to output high.
         if cs is not None:
-            ft232h.setup(cs, GPIO.OUT)
             ft232h.set_high(cs)
+            ft232h.setup(cs, GPIO.OUT)
         self._cs = cs
         # Initialize clock, mode, and bit order.
         self.set_clock_hz(max_speed_hz)
