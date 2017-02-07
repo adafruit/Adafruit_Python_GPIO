@@ -29,7 +29,7 @@ import time
 
 import ftdi1 as ftdi
 
-import GPIO
+import Adafruit_GPIO.GPIO as GPIO
 
 
 logger = logging.getLogger(__name__)
