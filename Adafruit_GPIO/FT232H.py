@@ -112,9 +112,8 @@ def enumerate_device_serials(vid=FT232H_VID, pid=FT232H_PID):
         while device_list is not None:
             # Get USB device strings and add serial to list of devices.
             ret, manufacturer, description, serial = ftdi.usb_get_strings(ctx, device_list.dev, 256, 256, 256)
-            if ret < 0:
-                raise RuntimeError('ftdi_usb_get_strings returned error {0}: {1}'.format(ret, ftdi.get_error_string(self._ctx)))
-            devices.append(serial)
+            if serial is not None:
+                devices.append(serial)
             device_list = device_list.next
         return devices
     finally:
