@@ -86,6 +86,7 @@ def pi_version():
     # Check /proc/cpuinfo for the Hardware field value.
     # 2708 is pi 1
     # 2709 is pi 2
+    # 2835 is pi 3 on 4.9.x kernel
     # Anything else is not a pi.
     with open('/proc/cpuinfo', 'r') as infile:
         cpuinfo = infile.read()
@@ -101,6 +102,9 @@ def pi_version():
     elif match.group(1) == 'BCM2709':
         # Pi 2
         return 2
+    elif match.group(1) == 'BCM2835':
+        # Pi 3 / Pi on 4.9.x kernel
+        return 3
     else:
         # Something else, not a pi.
         return None
