@@ -26,14 +26,15 @@ import Adafruit_GPIO.Platform as Platform
 
 
 def reverseByteOrder(data):
-    """Reverses the byte order of an int (16-bit) or long (32-bit) value."""
-    # Courtesy Vishal Sapre
-    byteCount = len(hex(data)[2:].replace('L','')[::2])
-    val       = 0
-    for i in range(byteCount):
-        val    = (val << 8) | (data & 0xff)
-        data >>= 8
-    return val
+    """DEPRECATED: See https://github.com/adafruit/Adafruit_Python_GPIO/issues/48"""
+    # # Courtesy Vishal Sapre
+    # byteCount = len(hex(data)[2:].replace('L','')[::2])
+    # val       = 0
+    # for i in range(byteCount):
+    #     val    = (val << 8) | (data & 0xff)
+    #     data >>= 8
+    # return val
+    raise RuntimeError('reverseByteOrder is deprecated! See: https://github.com/adafruit/Adafruit_Python_GPIO/issues/48')
 
 def get_default_bus():
     """Return the default bus number based on the device platform.  For a
