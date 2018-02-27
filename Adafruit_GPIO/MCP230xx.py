@@ -100,9 +100,9 @@ class MCP230xxBase(GPIO.BaseGPIO):
         """
         [self._validate_pin(pin) for pin in pins]
         # Get GPIO state.
-        gpio = self._device.readList(self.GPIO, self.gpio_bytes)
+        self.gpio = self._device.readList(self.GPIO, self.gpio_bytes)
         # Return True if pin's bit is set.
-        return [(gpio[int(pin/8)] & 1 << (int(pin%8))) > 0 for pin in pins]
+        return [(self.gpio[int(pin/8)] & 1 << (int(pin%8))) > 0 for pin in pins]
 
 
     def pullup(self, pin, enabled):
