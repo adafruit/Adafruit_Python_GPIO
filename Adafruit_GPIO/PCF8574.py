@@ -68,9 +68,9 @@ class PCF8574(GPIO.BaseGPIO):
         self.setup_pins({pin: mode})
 
     def setup_pins(self, pins):
-        if False in [y for x,y in [(self._validate_pin(pin),mode in (IN,OUT)) for pin,mode in pins.iteritems()]]:
+        if False in [y for x,y in [(self._validate_pin(pin),mode in (IN,OUT)) for pin,mode in pins.items()]]:
             raise ValueError('Invalid MODE, IN or OUT')
-        for pin,mode in pins.iteritems():
+        for pin,mode in pins.items():
             self.iodir = self._bit2(self.iodir, pin, mode)
         self._write_pins()
 
@@ -80,7 +80,7 @@ class PCF8574(GPIO.BaseGPIO):
 
     def output_pins(self, pins):
         [self._validate_pin(pin) for pin in pins.keys()]
-        for pin,value in pins.iteritems():
+        for pin,value in pins.items():
             self.gpio = self._bit2(self.gpio, pin, bool(value))
         self._write_pins()
 
