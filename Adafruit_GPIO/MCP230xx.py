@@ -43,7 +43,7 @@ class MCP230xxBase(GPIO.BaseGPIO):
         # Compute how many bytes are needed to store count of GPIO.
         self.gpio_bytes = int(math.ceil(self.NUM_GPIO/8.0))
         # Buffer register values so they can be changed without reading.
-        self.iodir = [0x00]*self.gpio_bytes  # Default direction to all inputs.
+        self.iodir = [0xFF]*self.gpio_bytes  # Default direction to all inputs.
         self.gppu = [0x00]*self.gpio_bytes  # Default to pullups disabled.
         self.gpio = [0x00]*self.gpio_bytes
         # Write current direction and pullup buffer state.
