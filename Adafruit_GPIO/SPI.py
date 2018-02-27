@@ -41,8 +41,9 @@ class SpiDev(object):
         self._device = spidev.SpiDev()
         self._device.open(port, device)
         self._device.max_speed_hz=max_speed_hz
-        # Default to mode 0.
+        # Default to mode 0, and make sure CS is active low.
         self._device.mode = 0
+        self.cshigh = False
 
     def set_clock_hz(self, hz):
         """Set the speed of the SPI clock in hertz.  Note that not all speeds
