@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 import logging
+import os
 import subprocess
 
 import Adafruit_GPIO.Platform as Platform
@@ -72,7 +73,7 @@ def require_repeated_start():
       http://www.raspberrypi.org/forums/viewtopic.php?f=44&t=15840
     """
     plat = Platform.platform_detect()
-    if plat == Platform.RASPBERRY_PI:
+    if plat == Platform.RASPBERRY_PI and os.path.exists('/sys/module/i2c_bcm2708/parameters/combined'):
         # On the Raspberry Pi there is a bug where register reads don't send a
         # repeated start condition like the kernel smbus I2C driver functions
         # define.  As a workaround this bit in the BCM2708 driver sysfs tree can
