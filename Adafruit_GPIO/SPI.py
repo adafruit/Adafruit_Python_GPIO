@@ -291,7 +291,7 @@ class BitBang(object):
         """
         if self._mosi is None:
             raise RuntimeError('Write attempted with no MOSI pin specified.')
-        if self._mosi is None:
+        if self._miso is None:
             raise RuntimeError('Read attempted with no MISO pin specified.')
         if assert_ss and self._ss is not None:
             self._gpio.set_low(self._ss)
