@@ -45,16 +45,16 @@ def platform_detect():
         return BEAGLEBONE_BLACK
     elif plat.lower().find('armv7l-with-glibc2.4') > -1:
         return BEAGLEBONE_BLACK
-        
+
     # Handle Minnowboard
     # Assumption is that mraa is installed
-    try: 
-        import mraa 
-        if mraa.getPlatformName()=='MinnowBoard MAX':
+    try:
+        import mraa
+        if mraa.getPlatformName() == 'MinnowBoard MAX':
             return MINNOWBOARD
     except ImportError:
         pass
-    
+
     # Couldn't figure out the platform, just return unknown.
     return UNKNOWN
 
@@ -67,7 +67,7 @@ def pi_revision():
         for line in infile:
             # Match a line of the form "Revision : 0002" while ignoring extra
             # info in front of the revsion (like 1000 when the Pi was over-volted).
-            match = re.match('Revision\s+:\s+.*(\w{4})$', line, flags=re.IGNORECASE)
+            match = re.match(r'Revision\s+:\s+.*(\w{4})$', line, flags=re.IGNORECASE)
             if match and match.group(1) in ['0000', '0002', '0003']:
                 # Return revision 1 if revision ends with 0000, 0002 or 0003.
                 return 1
@@ -91,7 +91,7 @@ def pi_version():
     with open('/proc/cpuinfo', 'r') as infile:
         cpuinfo = infile.read()
     # Match a line like 'Hardware   : BCM2709'
-    match = re.search('^Hardware\s+:\s+(\w+)$', cpuinfo,
+    match = re.search(r'^Hardware\s+:\s+(\w+)$', cpuinfo,
                       flags=re.MULTILINE | re.IGNORECASE)
     if not match:
         # Couldn't find the hardware, assume it isn't a pi.
@@ -103,6 +103,11 @@ def pi_version():
         # Pi 2
         return 2
     elif match.group(1) == 'BCM2835':
+        rev_match = re.search(r'^Revision\s+:\s+(\w{4}).*$', cpuinfo,
+                              flags=re.MULTILINE | re.IGNORECASE)
+        if rev_match and rev_match.group(1) == '9000':
+            # Pi Zero (1.2, 1.3, or W)
+            return 0
         # Pi 3 / Pi on 4.9.x kernel
         return 3
     else:
