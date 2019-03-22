@@ -185,7 +185,10 @@ class FT232H(GPIO.BaseGPIO):
         #else:
         #	logger.debug('Modem status error {0}'.format(ret))
         length = len(string)
-        ret = ftdi.write_data(self._ctx, string, length)
+        try:
+            ret = ftdi.write_data(self._ctx, string, length)
+        except TypeError:
+            ret = ftdi.write_data(self._ctx, string); #compatible with libFtdi 1.3
         # Log the string that was written in a python hex string format using a very
         # ugly one-liner list comprehension for brevity.
         #logger.debug('Wrote {0}'.format(''.join(['\\x{0:02X}'.format(ord(x)) for x in string])))
