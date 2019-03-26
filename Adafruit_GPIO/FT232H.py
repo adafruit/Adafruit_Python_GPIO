@@ -505,7 +505,7 @@ class SPI(object):
         # Read response bytes.
         return bytearray(self._ft232h._poll_read(length))
     
-    def readblock(self, data = [], lengthR = 'None', readmode = 1):
+    def bulkread(self, data = [], lengthR = 'None', readmode = 1):
         """Half-duplex SPI write then read. Send command and payload to slave as bytearray
             then consequently read out response from the slave for length in bytes.
         Designed for use with NOR or NAND flash chips, and possibly SD cards...etc...
