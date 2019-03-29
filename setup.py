@@ -1,3 +1,9 @@
+ensurepip
+
+#try the following if ensurepip is not sufficient
+#ensurepip --upgrade
+#pip install --upgrade pip setuptools
+
 try:
     # Try using ez_setup to install setuptools if not already installed.
     from ez_setup import use_setuptools
