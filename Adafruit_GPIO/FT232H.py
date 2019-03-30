@@ -470,6 +470,11 @@ class SPI(object):
         """Half-duplex SPI write.  The specified array of bytes will be clocked
         out the MOSI line.
         """
+        #check for hardware limit of FT232H and similar MPSSE chips
+        if (len(data) > 65536):
+            print 'the FTDI chip is limited to 65536 bytes (64 KB) of input/output per command!'
+            print 'use for loops for larger reads'
+            exit(1)
         # Build command to write SPI data.
         command = 0x10 | (self.lsbfirst << 3) | self.write_clock_ve
         logger.debug('SPI write with command {0:2X}.'.format(command))
@@ -490,21 +495,31 @@ class SPI(object):
         """Half-duplex SPI read.  The specified length of bytes will be clocked
         in the MISO line and returned as a bytearray object.
         """
+        #check for hardware limit of FT232H and similar MPSSE chips
+        if (1 > length > 65536):
+            print 'the FTDI chip is limited to 65536 bytes (64 KB) of input/output per command!'
+            print 'use for loops for larger reads'
+            exit(1)
         # Build command to read SPI data.
         command = 0x20 | (self.lsbfirst << 3) | (self.read_clock_ve << 2)
         logger.debug('SPI read with command {0:2X}.'.format(command))
         # Compute length low and high bytes.
         # NOTE: Must actually send length minus one because the MPSSE engine
         # considers 0 a length of 1 and FFFF a length of 65536
+        length = length/2
         len_low  = (length-1) & 0xFF
         len_high = ((length-1) >> 8) & 0xFF
         self._assert_cs()
         # Send command and length.
-        self._ft232h._write(str(bytearray((command, len_low, len_high, 0x87))))
+        # Perform twice to prevent error from hardware defect/limits
+        self._ft232h._write(str(bytearray((command, len_low, len_high))))
+        payload1 = self._ft232h._poll_read(length)
+        self._ft232h._write(str(bytearray((command, len_low, len_high))))
+        payload2 = self._ft232h._poll_read(length)
         self._deassert_cs()
         # Read response bytes.
-        return bytearray(self._ft232h._poll_read(length))
-    
+        return bytearray(payload1 + payload2)
+
     def bulkread(self, data = [], lengthR = 'None', readmode = 1):
         """Half-duplex SPI write then read. Send command and payload to slave as bytearray
             then consequently read out response from the slave for length in bytes.
@@ -548,6 +563,7 @@ class SPI(object):
         payload2 = spi._ft232h._poll_read(lengthR)
         #end command set
         spi._deassert_cs()
+        # Read response bytes.
         return bytearray(payload1 + payload2)
 
     def transfer(self, data):
@@ -555,6 +571,11 @@ class SPI(object):
         clocked out the MOSI line, while simultaneously bytes will be read from
         the MISO line.  Read bytes will be returned as a bytearray object.
         """
+        #check for hardware limit of FT232H and similar MPSSE chips
+        if (len(data) > 65536):
+            print 'the FTDI chip is limited to 65536 bytes (64 KB) of input/output per command!'
+            print 'use for loops for larger reads'
+            exit(1)
         # Build command to read and write SPI data.
         command = 0x30 | (self.lsbfirst << 3) | (self.read_clock_ve << 2) | self.write_clock_ve
         logger.debug('SPI transfer with command {0:2X}.'.format(command))
@@ -562,16 +583,22 @@ class SPI(object):
         # NOTE: Must actually send length minus one because the MPSSE engine
         # considers 0 a length of 1 and FFFF a length of 65536
         length = len(data)
+        length = length/2
         len_low  = (length-1) & 0xFF
         len_high = ((length-1) >> 8) & 0xFF
         # Send command and length.
+        # Perform twice to prevent error from hardware defect/limits
         self._assert_cs()
         self._ft232h._write(str(bytearray((command, len_low, len_high))))
         self._ft232h._write(str(bytearray(data)))
-        self._ft232h._write('\x87')
+        payload1 = self._ft232h._poll_read(length)
+        self._ft232h._write(str(bytearray((command, len_low, len_high))))
+        self._ft232h._write(str(bytearray(data)))
+        payload2 = self._ft232h._poll_read(length)
+        #self._ft232h._write('\x87')
         self._deassert_cs()
         # Read response bytes.
-        return bytearray(self._ft232h._poll_read(length))
+        return bytearray(payload1 + payload2)
 
 
 class I2CDevice(object):
