@@ -481,21 +481,21 @@ class SPI(object):
         # Compute length low and high bytes.
         # NOTE: Must actually send length minus one because the MPSSE engine
         # considers 0 a length of 1 and FFFF a length of 65536
-	    # splitting into two lists for two commands to prevent buffer errors
-	    data1 = data[:len(data)/2]
-	    data2 = data[len(data)/2:]
+	# splitting into two lists for two commands to prevent buffer errors
+	data1 = data[:len(data)/2]
+	data2 = data[len(data)/2:]
         len_low1  = (len(data1) - 1) & 0xFF
         len_high1 = ((len(data1) - 1) >> 8) & 0xFF
-	    len_low2  = (len(data2) - 1) & 0xFF
+	len_low2  = (len(data2) - 1) & 0xFF
         len_high2 = ((len(data2) - 1) >> 8) & 0xFF
         self._assert_cs()
         # Send command and length, then data, split into two commands, handle for length 1
-	    if len(data1) > 0:
+	if len(data1) > 0:
             self._ft232h._write(str(bytearray((command, len_low1, len_high1))))
             self._ft232h._write(str(bytearray(data1)))
         if len(data2) > 0:
-	        self._ft232h._write(str(bytearray((command, len_low2, len_high2))))
-	        self._ft232h._write(str(bytearray(data2)))
+	    self._ft232h._write(str(bytearray((command, len_low2, len_high2))))
+	    self._ft232h._write(str(bytearray(data2)))
         self._deassert_cs()
         
     def read(self, length):
@@ -513,13 +513,13 @@ class SPI(object):
         # Compute length low and high bytes.
         # NOTE: Must actually send length minus one because the MPSSE engine
         # considers 0 a length of 1 and FFFF a length of 65536
-	    #force odd numbers to round up instead of down
-	    lengthR = length
-	    if length % 2 == 1:
-	        lengthR += 1
-	    lengthR = lengthR/2
-	    #when odd length requested, get the remainder instead of the same number
-	    lenremain = length - lengthR
+	#force odd numbers to round up instead of down
+	lengthR = length
+	if length % 2 == 1:
+	    lengthR += 1
+	lengthR = lengthR/2
+	#when odd length requested, get the remainder instead of the same number
+	lenremain = length - lengthR
         len_low  = (lengthR - 1) & 0xFF
         len_high = ((lengthR - 1) >> 8) & 0xFF
         self._assert_cs()
@@ -559,12 +559,12 @@ class SPI(object):
         len_highW = ((lengthW) >> 8) & 0xFF
         commandR = 0x20 | (self.lsbfirst << 3) | (self.read_clock_ve << 2)
         #force odd numbers to round up instead of down
-	    length = lengthR
-	    if lengthR % 2 == 1:
-	        length += 1
-	    length = length/2
+	length = lengthR
+	if lengthR % 2 == 1:
+	    length += 1
+	length = length/2
         #when odd length requested, get the remainder instead of the same number
-	    lenremain = lengthR - length
+	lenremain = lengthR - length
         len_lowR  = (length - 1) & 0xFF
         len_highR = ((length - 1) >> 8) & 0xFF
         #logger debug info
@@ -602,25 +602,25 @@ class SPI(object):
         # NOTE: Must actually send length minus one because the MPSSE engine
         # considers 0 a length of 1 and FFFF a length of 65536
         data1 = data[:len(data)/2]
-	    data2 = data[len(data)/2:]
-	    len_low1  = (len(data1) - 1) & 0xFF
+	data2 = data[len(data)/2:]
+	len_low1  = (len(data1) - 1) & 0xFF
         len_high1 = ((len(data1) - 1) >> 8) & 0xFF
-	    len_low2  = (len(data2) - 1) & 0xFF
+	len_low2  = (len(data2) - 1) & 0xFF
         len_high2 = ((len(data2) - 1) >> 8) & 0xFF
-	    payload1 = ''
-	    payload2 = ''
-	    #start command set
+	payload1 = ''
+	payload2 = ''
+	#start command set
         self._assert_cs()
         # Perform twice to prevent error from hardware defect/limits
-	    # Send command and length, then data, split into two commands, handle for length 1
-	    if len(data1) > 0:
-	        self._ft232h._write(str(bytearray((command, len_low1, len_high1))))
-	        self._ft232h._write(str(bytearray(data1)))
-	        payload1 = self._ft232h._poll_read(len(data1))
-	    if len(data2) > 0:
-	        self._ft232h._write(str(bytearray((command, len_low2, len_high2))))
-	        self._ft232h._write(str(bytearray(data2)))
-	        payload2 = self._ft232h._poll_read(len(data2))
+	# Send command and length, then data, split into two commands, handle for length 1
+	if len(data1) > 0:
+	    self._ft232h._write(str(bytearray((command, len_low1, len_high1))))
+	    self._ft232h._write(str(bytearray(data1)))
+	    payload1 = self._ft232h._poll_read(len(data1))
+	if len(data2) > 0:
+	    self._ft232h._write(str(bytearray((command, len_low2, len_high2))))
+	    self._ft232h._write(str(bytearray(data2)))
+	    payload2 = self._ft232h._poll_read(len(data2))
         #self._ft232h._write('\x87')
         self._deassert_cs()
         # Read response bytes.
