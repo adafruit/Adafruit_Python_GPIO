@@ -497,7 +497,7 @@ class SPI(object):
 	    self._ft232h._write(str(bytearray((command, len_low2, len_high2))))
 	    self._ft232h._write(str(bytearray(data2)))
         self._deassert_cs()
-        
+
     def read(self, length):
         """Half-duplex SPI read.  The specified length of bytes will be clocked
         in the MISO line and returned as a bytearray object.
