@@ -481,16 +481,23 @@ class SPI(object):
         # Compute length low and high bytes.
         # NOTE: Must actually send length minus one because the MPSSE engine
         # considers 0 a length of 1 and FFFF a length of 65536
-        length = len(data)-1
-        len_low  = length & 0xFF
-        len_high = (length >> 8) & 0xFF
+	    # splitting into two lists for two commands to prevent buffer errors
+	    data1 = data[:len(data)/2]
+	    data2 = data[len(data)/2:]
+        len_low1  = (len(data1) - 1) & 0xFF
+        len_high1 = ((len(data1) - 1) >> 8) & 0xFF
+	    len_low2  = (len(data2) - 1) & 0xFF
+        len_high2 = ((len(data2) - 1) >> 8) & 0xFF
         self._assert_cs()
-        # Send command and length.
-        self._ft232h._write(str(bytearray((command, len_low, len_high))))
-        # Send data.
-        self._ft232h._write(str(bytearray(data)))
+        # Send command and length, then data, split into two commands, handle for length 1
+	    if len(data1) > 0:
+            self._ft232h._write(str(bytearray((command, len_low1, len_high1))))
+            self._ft232h._write(str(bytearray(data1)))
+        if len(data2) > 0:
+	        self._ft232h._write(str(bytearray((command, len_low2, len_high2))))
+	        self._ft232h._write(str(bytearray(data2)))
         self._deassert_cs()
-
+        
     def read(self, length):
         """Half-duplex SPI read.  The specified length of bytes will be clocked
         in the MISO line and returned as a bytearray object.
@@ -506,18 +513,24 @@ class SPI(object):
         # Compute length low and high bytes.
         # NOTE: Must actually send length minus one because the MPSSE engine
         # considers 0 a length of 1 and FFFF a length of 65536
-        length = length/2
-        len_low  = (length-1) & 0xFF
-        len_high = ((length-1) >> 8) & 0xFF
+	    #force odd numbers to round up instead of down
+	    lengthR = length
+	    if length % 2 == 1:
+	        lengthR += 1
+	    lengthR = lengthR/2
+	    #when odd length requested, get the remainder instead of the same number
+	    lenremain = length - lengthR
+        len_low  = (lengthR - 1) & 0xFF
+        len_high = ((lengthR - 1) >> 8) & 0xFF
         self._assert_cs()
         # Send command and length.
         # Perform twice to prevent error from hardware defect/limits
         self._ft232h._write(str(bytearray((command, len_low, len_high))))
-        payload1 = self._ft232h._poll_read(length)
+        payload1 = self._ft232h._poll_read(lengthR)
         self._ft232h._write(str(bytearray((command, len_low, len_high))))
-        payload2 = self._ft232h._poll_read(length)
+        payload2 = self._ft232h._poll_read(lenremain)
         self._deassert_cs()
-        # Read response bytes.
+        # Read response bytes
         return bytearray(payload1 + payload2)
 
     def bulkread(self, data = [], lengthR = 'None', readmode = 1):
@@ -540,30 +553,36 @@ class SPI(object):
             lengthR = len(data)
         #command parameters definition and math
         #MPSSE engine sees length 0 as 1 byte, so - 1 lengths
-        commandW = 0x10 | (spi.lsbfirst << 3) | spi.write_clock_ve
+        commandW = 0x10 | (self.lsbfirst << 3) | self.write_clock_ve
         lengthW = len(data) - 1
         len_lowW  = (lengthW) & 0xFF
         len_highW = ((lengthW) >> 8) & 0xFF
-        commandR = 0x20 | (spi.lsbfirst << 3) | (spi.read_clock_ve << 2)
-        lengthR = lengthR/2
-        len_lowR  = (lengthR-1) & 0xFF
-        len_highR = ((lengthR-1) >> 8) & 0xFF
+        commandR = 0x20 | (self.lsbfirst << 3) | (self.read_clock_ve << 2)
+        #force odd numbers to round up instead of down
+	    length = lengthR
+	    if lengthR % 2 == 1:
+	        length += 1
+	    length = length/2
+        #when odd length requested, get the remainder instead of the same number
+	    lenremain = lengthR - length
+        len_lowR  = (length - 1) & 0xFF
+        len_highR = ((length - 1) >> 8) & 0xFF
         #logger debug info
-        #logger.debug('SPI bulkread with write command {0:2X}.'.format(commandW))
-        #logger.debug('and read command {0:2X}.'.format(commandR))
+        logger.debug('SPI bulkread with write command {0:2X}.'.format(commandW))
+        logger.debug('and read command {0:2X}.'.format(commandR))
         #begin command set
-        spi._assert_cs()
+        self._assert_cs()
         #write command, these have to be separated due to TypeError
-        spi._ft232h._write(str(bytearray((commandW, len_lowW, len_highW))))
-        spi._ft232h._write(str(bytearray(data)))
-        #read command, which is now divided into two commands
-        spi._ft232h._write(str(bytearray((commandR, len_lowR, len_highR))))
-        payload1 = spi._ft232h._poll_read(lengthR)
-        spi._ft232h._write(str(bytearray((commandR, len_lowR, len_highR))))
-        payload2 = spi._ft232h._poll_read(lengthR)
+        self._ft232h._write(str(bytearray((commandW, len_lowW, len_highW))))
+        self._ft232h._write(str(bytearray(data)))
+        #read command, which is divided into two commands
+        self._ft232h._write(str(bytearray((commandR, len_lowR, len_highR))))
+        payload1 = self._ft232h._poll_read(length)
+        self._ft232h._write(str(bytearray((commandR, len_lowR, len_highR))))
+        payload2 = self._ft232h._poll_read(lenremain)
+        self._deassert_cs()
         #end command set
-        spi._deassert_cs()
-        # Read response bytes.
+        # Read response bytes
         return bytearray(payload1 + payload2)
 
     def transfer(self, data):
@@ -582,24 +601,30 @@ class SPI(object):
         # Compute length low and high bytes.
         # NOTE: Must actually send length minus one because the MPSSE engine
         # considers 0 a length of 1 and FFFF a length of 65536
-        length = len(data)
-        length = length/2
-        len_low  = (length-1) & 0xFF
-        len_high = ((length-1) >> 8) & 0xFF
-        # Send command and length.
-        # Perform twice to prevent error from hardware defect/limits
+        data1 = data[:len(data)/2]
+	    data2 = data[len(data)/2:]
+	    len_low1  = (len(data1) - 1) & 0xFF
+        len_high1 = ((len(data1) - 1) >> 8) & 0xFF
+	    len_low2  = (len(data2) - 1) & 0xFF
+        len_high2 = ((len(data2) - 1) >> 8) & 0xFF
+	    payload1 = ''
+	    payload2 = ''
+	    #start command set
         self._assert_cs()
-        self._ft232h._write(str(bytearray((command, len_low, len_high))))
-        self._ft232h._write(str(bytearray(data)))
-        payload1 = self._ft232h._poll_read(length)
-        self._ft232h._write(str(bytearray((command, len_low, len_high))))
-        self._ft232h._write(str(bytearray(data)))
-        payload2 = self._ft232h._poll_read(length)
+        # Perform twice to prevent error from hardware defect/limits
+	    # Send command and length, then data, split into two commands, handle for length 1
+	    if len(data1) > 0:
+	        self._ft232h._write(str(bytearray((command, len_low1, len_high1))))
+	        self._ft232h._write(str(bytearray(data1)))
+	        payload1 = self._ft232h._poll_read(len(data1))
+	    if len(data2) > 0:
+	        self._ft232h._write(str(bytearray((command, len_low2, len_high2))))
+	        self._ft232h._write(str(bytearray(data2)))
+	        payload2 = self._ft232h._poll_read(len(data2))
         #self._ft232h._write('\x87')
         self._deassert_cs()
         # Read response bytes.
         return bytearray(payload1 + payload2)
-
 
 class I2CDevice(object):
     """Class for communicating with an I2C device using the smbus library.
