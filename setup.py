@@ -1,8 +1,10 @@
-print 'THIS INSTALL SCRIPT MAY REQUIRE ROOT/ADMIN PERMISSIONS'
-print 'Especially if you installed python for "all users"'
-print 'try the following in command prompt if ensurepip is not sufficient'
-print '$ python -m ensurepip --upgrade'
-print '$ python -m pip install --upgrade pip setuptools'
+print('Adafruit GPIO Library')
+print('Works best with Python 2.7')
+print('THIS INSTALL SCRIPT MAY REQUIRE ROOT/ADMIN PERMISSIONS')
+print('Especially if you installed python for "all users" on Windows')
+print('\ntry the following in your systems terminal if ensurepip is not sufficient:')
+print('$ python -m ensurepip --upgrade')
+print('$ python -m pip install --upgrade pip setuptools')
 
 import sys
 try:
