@@ -472,8 +472,8 @@ class SPI(object):
         """
         #check for hardware limit of FT232H and similar MPSSE chips
         if (len(data) > 65536):
-            print 'the FTDI chip is limited to 65536 bytes (64 KB) of input/output per command!'
-            print 'use for loops for larger reads'
+            print('the FTDI chip is limited to 65536 bytes (64 KB) of input/output per command!')
+            print('use for loops for larger reads')
             exit(1)
         # Build command to write SPI data.
         command = 0x10 | (self.lsbfirst << 3) | self.write_clock_ve
@@ -504,8 +504,8 @@ class SPI(object):
         """
         #check for hardware limit of FT232H and similar MPSSE chips
         if (1 > length > 65536):
-            print 'the FTDI chip is limited to 65536 bytes (64 KB) of input/output per command!'
-            print 'use for loops for larger reads'
+            print('the FTDI chip is limited to 65536 bytes (64 KB) of input/output per command!')
+            print('use for loops for larger reads')
             exit(1)
         # Build command to read SPI data.
         command = 0x20 | (self.lsbfirst << 3) | (self.read_clock_ve << 2)
@@ -545,8 +545,8 @@ class SPI(object):
         """
         #check for hardware limit of FT232H and similar MPSSE chips
         if (1 > lengthR > 65536)|(len(data) > 65536):
-            print 'the FTDI chip is limited to 65536 bytes (64 KB) of input/output per command!'
-            print 'use for loops for larger reads'
+            print('the FTDI chip is limited to 65536 bytes (64 KB) of input/output per command!')
+            print('use for loops for larger reads')
             exit(1)
         #default mode is to act like `transfer` but half-duplex
         if (lengthR == 'None')&(readmode == 1):
@@ -592,8 +592,8 @@ class SPI(object):
         """
         #check for hardware limit of FT232H and similar MPSSE chips
         if (len(data) > 65536):
-            print 'the FTDI chip is limited to 65536 bytes (64 KB) of input/output per command!'
-            print 'use for loops for larger reads'
+            print('the FTDI chip is limited to 65536 bytes (64 KB) of input/output per command!')
+            print('use for loops for larger reads')
             exit(1)
         # Build command to read and write SPI data.
         command = 0x30 | (self.lsbfirst << 3) | (self.read_clock_ve << 2) | self.write_clock_ve
