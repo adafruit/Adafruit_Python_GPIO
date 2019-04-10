@@ -422,5 +422,8 @@ def get_platform_gpio(**keywords):
     elif plat == Platform.MINNOWBOARD:
         import mraa
         return AdafruitMinnowAdapter(mraa, **keywords)
+    elif plat == Platform.JETSON_NANO:
+        import Jetson.GPIO
+        return RPiGPIOAdapter(Jetson.GPIO, **keywords)
     elif plat == Platform.UNKNOWN:
         raise RuntimeError('Could not determine platform.')
