@@ -1,3 +1,12 @@
+Deprecation Warning
+===================
+This library has been deprecated, we have replaced all of the libraries that use this repo with CircuitPython libraries that are Python3 compatible, and support a wide range of single board computers!
+
+Visit https://circuitpython.org/blinka for more information
+
+
+
+
 Adafruit Python GPIO Library
 ============================
 
