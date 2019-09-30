@@ -1,11 +1,13 @@
-Deprecation Warning
+!!!Deprecation Warning!!!
 ===================
-This library has been deprecated, we have replaced all of the libraries that use this repo with CircuitPython libraries that are Python3 compatible, and support a wide range of single board computers!
+This library has been deprecated in favor of [our python3 Blinka library](https://github.com/adafruit/Adafruit_Blinka). We have replaced all of the libraries that use this repo with CircuitPython libraries that are Python3 compatible, and support a [wide variety of single board/linux computers](https://circuitpython.org/blinka)!
 
 Visit https://circuitpython.org/blinka for more information
 
+CircuitPython has [support for almost 200 different drivers](https://circuitpython.readthedocs.io/projects/bundle/en/latest/drivers.html), and a  as well as [FT232H support for Mac/Win/Linux](https://learn.adafruit.com/circuitpython-on-any-computer-with-ft232h)!
 
-
+!!!Deprecation Warning!!!
+===================
 
 Adafruit Python GPIO Library
 ============================
